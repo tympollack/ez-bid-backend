@@ -17,7 +17,7 @@ app.get('/getAuctionList', function (req, res) {
     const url = 'http://bidfta.bidqt.com/BidFTA/services/invoices/WlAuctions/filter?page=1&size=250&sort=endDateTime%20asc'
 
     const data = {
-        q: 'showTimeRemaining=0 AND lower(ftalocationName) like lower(\'Newport, KY%\')'
+        q: 'showTimeRemaining=0'
     }
 
     const params = {
@@ -33,16 +33,9 @@ app.get('/getAuctionList', function (req, res) {
         body: JSON.stringify(data)
     }
 
-    const callback = function(data) {
-        data.forEach(a => console.log(a))
-        // data.forEach(a => this.auctions.push(a))
-    }
-
     fetch(url, params).then(response => response.json())
-        .then(result => console.log('success:', result))
+        .then(d => res.status(200).send(d))
         .catch(error => console.log('error:', error));
-
-    res.end()
 })
 
 app.listen(3000)
