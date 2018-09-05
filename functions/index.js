@@ -5,9 +5,6 @@ const fetch = require('node-fetch')
 
 admin.initializeApp(functions.config().firebase)
 
-// Create and Deploy Your First Cloud Functions
-// https://firebase.google.com/docs/functions/write-firebase-functions
-
 exports.helloWorld = functions.https.onRequest((req, res) => {
     cors(req, res, () => {
         res.status(200).send(JSON.stringify('hello world'))
@@ -42,4 +39,11 @@ exports.getAuctionList = functions.https.onRequest((req, res) => {
             .then(d => res.status(200).send(d))
             .catch(error => console.log('error:', error));
     })
+})
+
+exports.createUser = functions.firestore
+    .document('users/{userId}')
+    .onCreate((snap, context) => {
+        const newValue = snap.data()
+        console.log('new user: ', newValue)
 })
