@@ -14,11 +14,15 @@
     "firebase-admin": "~6.0.0",
     "firebase-app": "0.0.1",
     "firebase-functions": "^2.0.3",
-    "node-fetch": "^2.2.0"
+    "node-fetch": "^2.2.0",
+    "puppeteer": "^1.8.0"
   },
   "devDependencies": {
     "eslint": "^4.12.0",
     "eslint-plugin-promise": "^3.6.0"
+  },
+  "engines": {
+    "node": "8"
   },
   "private": true
 }
