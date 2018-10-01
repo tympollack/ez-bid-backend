@@ -1,15 +1,42 @@
-const functions = require('firebase-functions')
-const admin = require('firebase-admin')
 const cors = require('cors')({ origin: true })
 const fetch = require('node-fetch')
+
 const puppeteer = require('puppeteer')
+const puppetOpts = {memory: '2GB', timeoutSeconds: 60}
+
+const admin = require('firebase-admin')
+const functions = require('firebase-functions')
+const firebase = require('firebase')
+require('firebase/firestore')
 
 admin.initializeApp(functions.config().firebase)
-const puppetOpts = {memory: '2GB', timeoutSeconds: 60}
+
+const db = firebase.firestore()
+db.settings({ timestampsInSnapshots: true })
+db.enablePersistence().catch(error => {
+    if (error.code === 'failed-precondition') {
+        // Multiple tabs open, persistence can only be enabled
+        // in one tab at a a time.
+    } else if (error.code === 'unimplemented') {
+        // The current browser does not support all of the
+        // features required to enable persistence
+    }
+})
 
 exports.helloWorld = functions.https.onRequest((req, res) => {
     cors(req, res, () => {
         res.status(200).send(JSON.stringify('hello world'))
+    })
+})
+
+exports.testAddToFirestore = functions.https.onRequest((req, res) => {
+    db.collection('users').add({
+        id: 'testfoo',
+        name: 'poop'
+    }).then(docRef => {
+        console.log('testAddToFirestore document written with id', docRef.id)
+    }).catch(error => {
+        console.error('error adding document', error)
     })
 })
 
@@ -49,11 +76,10 @@ exports.screenshot = functions.runWith(puppetOpts).https.onRequest(async (req, r
 //     q: 'showTimeRemaining=0'
 // }
 
-exports.getAuctionList = functions.https.onRequest(async (req, res) => {
+exports.processNewAuctions = functions.https.onRequest(async (req, res) => {
     cors(req, res, async () => {
         console.log(req.body)
 
-        // const auctionsUrl = 'http://bidfta.bidqt.com/BidFTA/services/invoices/WlAuctions/filter?sort=createdTs%20desc&size=250&page='
         const auctionsUrl = 'http://bidfta.bidqt.com/BidFTA/services/invoices/WlAuctions/filter?sort=createdTs%20desc&size=2&page='
         const params = {
             method: 'POST',
@@ -67,11 +93,12 @@ exports.getAuctionList = functions.https.onRequest(async (req, res) => {
             referrer: 'no-referrer'
         }
 
+        const maxPages = 2
         let i = 1
         let total = 0
         let continueProcessing
 
-        // do {
+        do {
             const url = auctionsUrl + i
             continueProcessing = await fetch(url, params).then(response => response.json())
                 .then(d => {
@@ -80,17 +107,15 @@ exports.getAuctionList = functions.https.onRequest(async (req, res) => {
 
                     total += auctionList.length
                     console.log('getAuctionList processing page', i)
-                    auctionList.forEach(auction => {
-                        addToFirestore(auction)
-                    })
+                    addAuctionListToFirestore(auctionList)
                     return true
                 })
                 .catch(error => {
                     console.log('error:', error)
                     return false
                 })
-            // i++
-        // } while (continueProcessing)
+            i++
+        } while (continueProcessing && i < maxPages)
 
         console.log('getAuctionList processed', i, plural('page', i), total, plural('auction', total))
 
@@ -105,8 +130,10 @@ function plural(noun, count) {
     return count === 1 ? noun : (noun + 's')
 }
 
-function addToFirestore(auction) {
-    console.log(auction)
+function addAuctionListToFirestore(auctionList) {
+    const batchSize = auctionList.length
+    console.log('addAuctionListToFirestore adding', batchSize, plural('auction', batchSize))
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

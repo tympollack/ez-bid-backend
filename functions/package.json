@@ -10,7 +10,9 @@
     "logs": "firebase functions:log"
   },
   "dependencies": {
+    "@firebase/firestore": "^0.8.2",
     "cors": "^2.8.4",
+    "firebase": "^5.5.2",
     "firebase-admin": "~6.0.0",
     "firebase-app": "0.0.1",
     "firebase-functions": "^2.0.3",
