@@ -11,35 +11,87 @@ require('firebase/firestore')
 
 admin.initializeApp(functions.config().firebase)
 
-const db = firebase.firestore()
+const db = admin.firestore()
 db.settings({ timestampsInSnapshots: true })
-db.enablePersistence().catch(error => {
-    if (error.code === 'failed-precondition') {
+// db.enablePersistence().catch(error => {
+//     if (error.code === 'failed-precondition') {
         // Multiple tabs open, persistence can only be enabled
         // in one tab at a a time.
-    } else if (error.code === 'unimplemented') {
+    // } else if (error.code === 'unimplemented') {
         // The current browser does not support all of the
         // features required to enable persistence
+    // }
+// })
+
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////   HELPERS   ///////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+const COLLECTIONS = {
+    USERS: 'users'
+}
+
+exports.test = functions.https.onRequest((req, res) => {
+    res.status(200).send('poop')
+})
+
+exports.user = functions.https.onRequest((req, res) => {
+    // console.log(req)
+
+    switch(req.method) {
+        case 'GET':
+            user__get()
+            res.status(200).send(req.url)
+            break
+        case 'POST':
+            res.status(200).send('posted')
+            break
+        default:
+            res.status(404).send()
     }
+    // const username = 'testfoo'
+    // const userDoc = db.collection('users').doc(username)
+    // userDoc.get().then(user => {
+    //     if (user.exists) {
+    //         const error = 'User already exists: ' + username
+    //         console.error('testAddtoFirestore user already exists', error)
+    //         res.status(200).send(error)
+    //         return
+    //     }
+    //
+    //     userDoc.set({
+    //         id: username,
+    //         name: 'poop'
+    //     }).then(docRef => {
+    //         console.log('testAddToFirestore document written with id', docRef)
+    //         res.status(200).send(JSON.stringify(docRef))
+    //     }).catch(error => {
+    //         console.error('testAddToFirestore error adding document', error)
+    //         res.status(200).send('Error adding user ' + username)
+    //     })
+    // })
 })
 
-exports.helloWorld = functions.https.onRequest((req, res) => {
-    cors(req, res, () => {
-        res.status(200).send(JSON.stringify('hello world'))
-    })
-})
+function user__get(user) {
 
-exports.testAddToFirestore = functions.https.onRequest((req, res) => {
-    db.collection('users').add({
-        id: 'testfoo',
-        name: 'poop'
-    }).then(docRef => {
-        console.log('testAddToFirestore document written with id', docRef.id)
-    }).catch(error => {
-        console.error('error adding document', error)
-    })
-})
+}
 
+function user__post(user) {
+
+}
+
+function user__put(user) {
+
+}
+
+function user__patch(user) {
+
+}
+
+function user__delete(user) {
+
+}
 
 ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////   PUPPETEER AUTOMATION   ////////////////////////////////////
