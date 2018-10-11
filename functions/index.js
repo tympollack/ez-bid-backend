@@ -1,8 +1,6 @@
+const express = require('express')
 const cors = require('cors')({ origin: true })
 const fetch = require('node-fetch')
-
-const puppeteer = require('puppeteer')
-const puppetOpts = {memory: '2GB', timeoutSeconds: 60}
 
 const admin = require('firebase-admin')
 const functions = require('firebase-functions')
@@ -23,33 +21,40 @@ db.settings({ timestampsInSnapshots: true })
     // }
 // })
 
+exports.puppeteering = require('./puppeteering')
+exports.firestoreReactive = require('./firestoreReactive')
+
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////   HELPERS   ///////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-const COLLECTIONS = {
-    USERS: 'users'
-}
+const app = express()
+app.use(cors)
+
+app.get('/:id', (req, res) => res.send('got test ' + req.params.id))
+app.post('/', (req, res) => res.send('posted'))
+
+exports.user = functions.https.onRequest(app)
 
 exports.test = functions.https.onRequest((req, res) => {
     res.status(200).send('poop')
 })
 
-exports.user = functions.https.onRequest((req, res) => {
-    // console.log(req)
-
-    switch(req.method) {
-        case 'GET':
-            user__get()
-            res.status(200).send(req.url)
-            break
-        case 'POST':
-            res.status(200).send('posted')
-            break
-        default:
-            res.status(404).send()
-    }
+// exports.user = functions.https.onRequest((req, res) => {
+    // // console.log(req)
+    //
+    // switch(req.method) {
+    //     case 'GET':
+    //         user__get()
+    //         res.status(200).send(req.url)
+    //         break
+    //     case 'POST':
+    //         res.status(200).send('posted')
+    //         break
+    //     default:
+    //         res.status(404).send()
+    // }
     // const username = 'testfoo'
     // const userDoc = db.collection('users').doc(username)
     // userDoc.get().then(user => {
@@ -71,57 +76,12 @@ exports.user = functions.https.onRequest((req, res) => {
     //         res.status(200).send('Error adding user ' + username)
     //     })
     // })
-})
+// })
 
-function user__get(user) {
-
-}
-
-function user__post(user) {
-
-}
-
-function user__put(user) {
-
-}
-
-function user__patch(user) {
-
-}
-
-function user__delete(user) {
-
-}
-
-///////////////////////////////////////////////////////////////////////////////////
-/////////////////////   PUPPETEER AUTOMATION   ////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
-
-
-exports.screenshot = functions.runWith(puppetOpts).https.onRequest(async (req, res) => {
-    const url = req.query.url
-
-    if (!url) {
-        return res.status(400).send('No url.')
-    }
-
-    const browser = res.locals.browser
-
-    try {
-        const page = await browser.newPage()
-        await page.goto(url, { waitUntil: 'networkidle0' })
-        const buffer = await page.screenshot({ fullPage: true })
-        res.type('image/png').send(buffer)
-    } catch(e) {
-        res.status(500).send(e.toString())
-    }
-
-    await browser.close()
-})
 
 
 ///////////////////////////////////////////////////////////////////////////////////
-/////////////////////   OUTSIDE INTERATION   //////////////////////////////////////
+/////////////////////   OUTSIDE INTERACTION   /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
 // const data = {
@@ -187,35 +147,3 @@ function addAuctionListToFirestore(auctionList) {
     console.log('addAuctionListToFirestore adding', batchSize, plural('auction', batchSize))
 
 }
-
-///////////////////////////////////////////////////////////////////////////////////
-/////////////////////   FIRESTORE REACTIVE   //////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
-
-exports.onUserCreated = functions.firestore
-    .document('users/{userId}')
-    .onCreate((snap, context) => {
-        const newValue = snap.data()
-        console.log('new user: ', newValue)
-})
-
-exports.onAuctionCreated = functions.firestore
-    .document('auctions/{auctionId}')
-    .onCreate((snap, context) => {
-        const newValue = snap.data()
-        console.log('new auction: ', newValue)
-})
-
-exports.onLocationCreated = functions.firestore
-    .document('locations/{locationId}')
-    .onCreate((snap, context) => {
-        const newValue = snap.data()
-        console.log('new location: ', newValue)
-})
-
-exports.onItemCreated = functions.firestore
-    .document('items/{itemId}')
-    .onCreate((snap, context) => {
-        const newValue = snap.data()
-        console.log('new item: ', newValue)
-})
