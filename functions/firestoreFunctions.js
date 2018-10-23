@@ -5,11 +5,13 @@ const firebase = require('firebase')
 require('firebase/firestore')
 const vars = require('./vars')
 const master = require('./index')
+const bodyParser = require('body-parser')
 
 const db = master.db
 
 const userApp = express()
 userApp.use(cors)
+userApp.use(bodyParser.json())
 
 userApp.get('/:id', async (req, res) => {
     const id = req.params.id
@@ -29,7 +31,17 @@ userApp.get('/:id', async (req, res) => {
         res.status(500).send(e)
     }
 })
-userApp.post('/', (req, res) => res.send('posted'))
+userApp.post('/', async(req, res) => {
+    const id = req.body.id
+    const doesExist = await getUserById(id)
+    if (doesExist) return
+
+    db.collection(vars.firestore.collections.users.name)
+        .doc(id)
+        .set({
+
+        })
+})
 
 const getUserById = id => {
     return new Promise(resolve => {
