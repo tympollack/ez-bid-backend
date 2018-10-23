@@ -24,7 +24,7 @@ exports.db = db
 // })
 
 exports.puppeteering = require('./puppeteering')
-exports.firestoreFunctions = require('./firestoreFunctions')
+exports.firestoreFunctions = require('./user')
 exports.firestoreReactive = require('./firestoreReactive')
 
 
