@@ -36,7 +36,7 @@ puppeteeringApp.get('/:auctionUrl', async (req, res) => {
 
     const browser = await puppeteer.launch()
     try {
-        console.log('puppeteer getting auction items from', auctionUrl)
+        console.log('puppeteer getting auction.js items from', auctionUrl)
     } catch (e) {
         res.status(500).send(e.toString())
     } finally {

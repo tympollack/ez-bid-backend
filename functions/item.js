@@ -10,47 +10,45 @@ const db = master.db
 
 const utils = require('./utils')
 const vars = require('./vars')
-const collection = vars.firestore.collections.users.name
+const collection = vars.firestore.collections.items.name
 
-const userApp = express()
-userApp.use(cors)
-userApp.use(bodyParser.json())
-userApp.use(utils.reqWrapper)
+const itemApp = express()
+itemApp.use(cors)
+itemApp.use(bodyParser.json())
+itemApp.use(utils.reqWrapper)
 
-// /user/userid
-// /user/userid/watching/itemid
-// /user/userid/bids/bidid
-// /user/userid/won/itemid
+// /item/itemid
 
-userApp.get('/', async (req, res) => {
-    console.log('GET /user ALL')
+// todo - idk if this would be useful
+// itemApp.get('/', async (req, res) => {
+//     console.log('GET /item ALL')
+//
+//     const ret = {}
+//     const collection = await db.collection(collection).get()
+//     collection.forEach(doc => ret[doc.id] = doc.data())
+//     res.status(200).send(JSON.stringify(ret))
+// })
 
-    const ret = {}
-    const collection = await db.collection(collection).get()
-    collection.forEach(doc => ret[doc.id] = doc.data())
-    res.status(200).send(JSON.stringify(ret))
-})
-
-userApp.get('/:id', async (req, res) => {
+itemApp.get('/:id', async (req, res) => {
     const id = req.params.id
-    console.log('GET /user', id)
+    console.log('GET /item', id)
 
-    const user = await getUserById(id)
-    if (user) {
-        console.log(user)
-        res.status(200).send(JSON.stringify(user))
+    const item = await getItemById(id)
+    if (item) {
+        console.log(item)
+        res.status(200).send(JSON.stringify(item))
         return
     }
-    console.error('user not found for id', id)
+    console.error('item not found for id', id)
     res.status(404).send()
 })
 
-userApp.post('/', async(req, res) => {
+itemApp.post('/', async(req, res) => {
     const body = req.body
     const id = body.id
-    console.log('POST /user', body)
+    console.log('POST /item', body)
 
-    const doesExist = id && await getUserById(id)
+    const doesExist = id && await getItemById(id)
     if (doesExist) {
         res.status(403).send()
         return
@@ -60,10 +58,10 @@ userApp.post('/', async(req, res) => {
     res.status(200).send()
 })
 
-userApp.put('/:id', async(req, res) => {
+itemApp.put('/:id', async(req, res) => {
     const body = req.body
     const id = req.params.id
-    console.log('PUT /user', id, body)
+    console.log('PUT /item', id, body)
 
     if (!id) {
         res.status(400).send()
@@ -74,12 +72,12 @@ userApp.put('/:id', async(req, res) => {
     res.status(200).send()
 })
 
-userApp.patch('/:id', async(req, res) => {
+itemApp.patch('/:id', async(req, res) => {
     const body = req.body
     const id = req.params.id
-    console.log('PATCH /user', id, body)
+    console.log('PATCH /item', id, body)
 
-    const doesExist = id && await getUserById(id)
+    const doesExist = id && await getItemById(id)
     if (!doesExist) {
         res.status(403).send()
         return
@@ -90,16 +88,16 @@ userApp.patch('/:id', async(req, res) => {
 })
 
 // Warning: Deleting a document does not delete its subcollections!
-userApp.delete('/:id', async(req, res) => {
+itemApp.delete('/:id', async(req, res) => {
     const id = req.params.id
-    console.log('DELETE /user', id)
+    console.log('DELETE /item', id)
 
     await db.collection(collection).doc(id).delete()
     res.status(200).send()
 })
 
-const getUserById = id => {
+const getItemById = id => {
     return utils.firestoreGetThingById(db, collection, id)
 }
 
-exports.user = functions.https.onRequest(userApp)
+exports.item = functions.https.onRequest(itemApp)

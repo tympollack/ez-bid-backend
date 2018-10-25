@@ -24,7 +24,11 @@ exports.db = db
 // })
 
 exports.puppeteering = require('./puppeteering')
-exports.firestoreFunctions = require('./user')
+exports.web = {
+    auction: require('./auction'),
+    item: require('./item'),
+    user: require('./user'),
+}
 exports.firestoreReactive = require('./firestoreReactive')
 
 

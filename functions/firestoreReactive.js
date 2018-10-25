@@ -7,8 +7,8 @@ exports.onAuctionCreated = functions.firestore
     .document(vars.firestore.collections.auctions.fields.id.path)
     .onCreate((snap, context) => {
         const newValue = snap.data()
-        console.log('new auction: ', newValue)
-        // todo - go get all auction item info
+        console.log('new auction.js: ', newValue)
+        // todo - go get all auction.js item info
     })
 
 
@@ -33,4 +33,10 @@ exports.onUserCreated = functions.firestore
     .onCreate((snap, context) => {
         const newValue = snap.data()
         console.log('new user: ', newValue)
+    })
+
+exports.onUserDeleted = functions.firestore
+    .document(vars.firestore.collections.users.fields.id.path)
+    .onDelete((snap, context) => {
+        console.log(snap.id, snap.data())
     })

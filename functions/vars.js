@@ -37,9 +37,7 @@ exports.firestore = {
                     name: 'userId',
                     path: 'users/{userId}'
                 }
-            }
+            },
         },
-        
-        
     }
 }
