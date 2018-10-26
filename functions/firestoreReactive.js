@@ -2,18 +2,19 @@ const functions = require('firebase-functions')
 const firebase = require('firebase')
 require('firebase/firestore')
 const vars = require('./vars')
+const collections = vars.firestore.collections
 
 exports.onAuctionCreated = functions.firestore
-    .document(vars.firestore.collections.auctions.fields.id.path)
+    .document(collections.auctions.fields.id.path)
     .onCreate((snap, context) => {
         const newValue = snap.data()
-        console.log('new auction.js: ', newValue)
+        console.log('new auction: ', newValue)
         // todo - go get all auction.js item info
     })
 
 
 exports.onItemCreated = functions.firestore
-    .document(vars.firestore.collections.items.fields.id.path)
+    .document(collections.items.fields.id.path)
     .onCreate((snap, context) => {
         const newValue = snap.data()
         console.log('new item: ', newValue)
@@ -21,7 +22,7 @@ exports.onItemCreated = functions.firestore
     })
 
 exports.onLocationCreated = functions.firestore
-    .document(vars.firestore.collections.locations.fields.id.path)
+    .document(collections.locations.fields.id.path)
     .onCreate((snap, context) => {
         const newValue = snap.data()
         console.log('new location: ', newValue)
@@ -29,14 +30,14 @@ exports.onLocationCreated = functions.firestore
     })
 
 exports.onUserCreated = functions.firestore
-    .document(vars.firestore.collections.users.fields.id.path)
+    .document(collections.users.fields.id.path)
     .onCreate((snap, context) => {
         const newValue = snap.data()
         console.log('new user: ', newValue)
     })
 
 exports.onUserDeleted = functions.firestore
-    .document(vars.firestore.collections.users.fields.id.path)
+    .document(collections.users.fields.id.path)
     .onDelete((snap, context) => {
-        console.log(snap.id, snap.data())
+        console.log('deleted user', snap.id, snap.data())
     })

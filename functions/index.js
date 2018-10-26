@@ -24,7 +24,7 @@ exports.db = db
 // })
 
 exports.puppeteering = require('./puppeteering')
-exports.web = {
+exports.api = {
     auction: require('./auction'),
     item: require('./item'),
     user: require('./user'),
