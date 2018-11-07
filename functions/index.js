@@ -25,9 +25,9 @@ exports.db = db
 
 exports.puppeteering = require('./puppeteering')
 exports.api = {
-    auction: require('./auction'),
-    item: require('./item'),
-    user: require('./user'),
+    auction: require('./api/auction'),
+    item: require('./api/item'),
+    user: require('./api/user'),
 }
 exports.firestoreReactive = require('./firestoreReactive')
 

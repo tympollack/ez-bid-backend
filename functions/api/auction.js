@@ -5,11 +5,11 @@ const functions = require('firebase-functions')
 const firebase = require('firebase')
 require('firebase/firestore')
 
-const master = require('./index')
+const master = require('../index')
 const db = master.db
 
-const utils = require('./utils')
-const vars = require('./vars')
+const utils = require('../utils')
+const vars = require('../vars')
 const collection = vars.firestore.collections.auctions.name
 
 const auctionApp = express()
@@ -19,15 +19,14 @@ auctionApp.use(utils.reqWrapper)
 
 // /auction/auctionid
 
-// todo - idk if this would be useful
-// auctionApp.get('/', async (req, res) => {
-//     console.log('GET /auction ALL')
-//
-//     const ret = {}
-//     const collection = await db.collection(collection).get()
-//     collection.forEach(doc => ret[doc.id] = doc.data())
-//     res.status(200).send(JSON.stringify(ret))
-// })
+auctionApp.get('/', async (req, res) => {
+    console.log('GET /auction ALL')
+
+    const ret = {}
+    const collection = await db.collection(collection).get()
+    collection.forEach(doc => ret[doc.id] = doc.data())
+    res.status(200).send(JSON.stringify(ret))
+})
 
 auctionApp.get('/:id', async (req, res) => {
     const id = req.params.id
