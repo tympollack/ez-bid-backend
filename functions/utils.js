@@ -12,11 +12,12 @@ exports.pluralize = (noun, count) => {
     return count === 1 ? noun : (noun + 's')
 }
 
-exports.reqWrapper = (req, res, next) => {
+exports.reqWrapper = async (req, res, next) => {
     try {
-        next()
+        await next()
     } catch (e) {
-        console.error(e)
-        res.status(500).send(e)
+        const easter = e.toString()
+        console.error(easter)
+        res.status(500).send(easter)
     }
 }

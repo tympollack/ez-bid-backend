@@ -41,3 +41,9 @@ exports.firestore = {
         },
     }
 }
+
+exports.urls = {
+    login: {
+        beta: 'https://beta.bidfta.com/login'
+    }
+}
