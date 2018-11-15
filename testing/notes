@@ -1,0 +1,65 @@
+firestore - hold user, item, location, auction, and bid info:
+    collections:
+        users:                      data type   notes                                                   need to update when...                                      update with cron job
+            email                   string      (pw handled by firebase auth)
+            oldBidNum               string      (optional if don't want app to automate user flow)
+            oldBidPw                string      (optional if don't want app to automate user flow)
+            newBidNum               string      (optional if don't want app to automate user flow)
+            newBidPw                string      (optional if don't want app to automate user flow)
+            watchedItems            array       (keep dupe list for quick index)                        current user updateWatchlist
+            pinnedAuctions          array       (keep dupe list for quick index)                        current user updatePinnedAuctions
+            favLocations            array       (keep dupe list for quick index)                        current user updateFavLocations
+
+            watchlist               collection  (note - need to get thumbnails when viewing as well)
+                itemRef             reference                                                           current user updateWatchlist
+                itemQuickImgRef     string      (figure out connection to database)
+                itemName            string
+                itemDesc            string
+                itemQuantity        number
+                itemCurrentBid      number                                                              any user onItemBid; any user onItemRefresh                  cron jobs
+                itemNextBid         number                                                              any user onItemBid; any user onItemRefresh                  cron jobs
+                userItemMaxBid      number                                                              current user onItemBid
+                auctionRef          reference
+                auctionLocation     string
+                auctionEndDate      timestamp
+                auctionEnded        boolean                                                             user item interaction                                       cron jobs
+
+            pinnedAuctions          collection                                                          current user updatePinnedAuctions
+                auctionRef          reference
+                auctionLocationRef  reference
+                auctionEndDate      timestamp
+                auctionEnded        boolean                                                             any user item interaction; any user auction interaction     cron jobs
+                notify              number                                                              current
+                hasBeenNotified     timestamp   kick off from cron job? have async processes wait for time? post back from pub/sub
+
+        items
+        locations
+        auctions
+        bids
+        notifications
+
+database - hold images - could be from users or fta:
+
+
+
+web api in functions for app user flow:
+
+    get item (id)
+    get auction (id)
+    get location (id)
+    get user (username - generated id for obfuscation)
+    create user
+    update user
+    delete user
+
+
+user flow:
+
+    app -> web api functions -> firestore / database -> app
+
+    app -> web api functions -> firestore / database -> app
+
+
+
+automated flow:
+    cron -> non-api functions -> task queue / handlers -> firestore / database / notifications
