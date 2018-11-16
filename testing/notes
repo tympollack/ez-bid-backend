@@ -63,3 +63,47 @@ user flow:
 
 automated flow:
     cron -> non-api functions -> task queue / handlers -> firestore / database / notifications
+
+
+
+
+
+user interaction stories
+    user creates account
+    user deletes account
+    user updates account info
+
+    user logs in / opens app
+        add to task queue - update user watchlist from bidfta
+            add/remove firestore watchlist items
+            update bid amounts on existing watchlist items
+            update time on existing watchlist items (sometimes - can be relevant for items ending under 3 min (delay from sniping))
+
+    user navigates to search preferences
+
+    user navigates to watchlist
+        if task queue update watchlist has not completed, cancel and fire immediately
+
+        user removes item from watchlist
+            remove item from firestore watchlist
+            add to task queue - remove item from bidfta watchlist
+
+        user selects item
+            -> open item info
+
+    user navigates to search
+        -> search with last used search preference
+
+    user searches for items
+    user saves search info
+    user opens item
+    user saves item to watchlist
+        add item to firestore watchlist
+
+    user browses auctions
+    user opens auction
+
+    user selects locations
+
+
+automated stories

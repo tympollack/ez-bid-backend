@@ -5,17 +5,16 @@ const functions = require('firebase-functions')
 const firebase = require('firebase')
 require('firebase/firestore')
 
-const master = require('../index')
+const master = require('../../index')
 const db = master.db
 
-const utils = require('../utils')
-const vars = require('../vars')
+const utils = require('../../utils')
+const vars = require('../../vars/vars')
 const collection = vars.firestore.collections.items.name
 
 const itemApp = express()
 itemApp.use(cors)
 itemApp.use(bodyParser.json())
-itemApp.use(utils.reqWrapper)
 
 // /item/itemid
 

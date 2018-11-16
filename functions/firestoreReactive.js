@@ -1,7 +1,7 @@
 const functions = require('firebase-functions')
 const firebase = require('firebase')
 require('firebase/firestore')
-const vars = require('./vars')
+const vars = require('./vars/vars')
 const collections = vars.firestore.collections
 
 exports.onAuctionCreated = functions.firestore

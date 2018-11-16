@@ -25,9 +25,9 @@ exports.db = db
 
 exports.puppeteering = require('./puppeteering')
 exports.api = {
-    auction: require('./api/auction'),
-    item: require('./api/item'),
-    user: require('./api/user'),
+    auction: require('./api/auction/auction'),
+    item: require('./api/item/item'),
+    user: require('./api/user/user'),
 }
 exports.firestoreReactive = require('./firestoreReactive')
 
@@ -58,8 +58,8 @@ exports.testBeta = functions.https.onRequest((req, res) => {
             },
             redirect: 'follow',
             referrer: 'no-referrer',
-            // body: {'idBidders':'5195','idItems':[108844],'idauctions':0}
-            body: JSON.stringify({'idBidders':'5195','idItems':[108844],'idauctions':0})
+            // body: {'idBidders':'xxx','idItems':[108844],'idauctions':0}
+            body: JSON.stringify({'idBidders':'xxx','idItems':[108844],'idauctions':0})
         }
 
         fetch(url, params).then(response => {

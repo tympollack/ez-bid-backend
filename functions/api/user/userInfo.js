@@ -5,22 +5,16 @@ const functions = require('firebase-functions')
 const firebase = require('firebase')
 require('firebase/firestore')
 
-const master = require('../index')
+const master = require('../../index')
 const db = master.db
 
-const utils = require('../utils')
-const vars = require('../vars')
+const utils = require('../../utils')
+const vars = require('../../vars/vars')
 const collection = vars.firestore.collections.users.name
 
 const userApp = express()
 userApp.use(cors)
 userApp.use(bodyParser.json())
-userApp.use(utils.reqWrapper)
-
-// /user/userid
-// /user/userid/watching/itemid
-// /user/userid/bids/bidid
-// /user/userid/won/itemid
 
 userApp.get('/', async (req, res) => {
     console.log('GET /user ALL')
@@ -102,4 +96,4 @@ const getUserById = id => {
     return utils.firestoreGetThingById(db, collection, id)
 }
 
-exports.user = functions.https.onRequest(userApp)
+exports = functions.https.onRequest(userApp)
