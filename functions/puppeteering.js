@@ -5,6 +5,7 @@ const waitUntilIdle = { waitUntil: 'networkidle2' }
 const routes = require('express').Router()
 
 const vars = require('./vars/vars')
+const sessionFields = vars.firestore.collections.users.fields.session.fields
 
 routes.get('/auction/:auctionUrl', async (req, res) => {
     const auctionUrl = req.params.auctionUrl
@@ -22,21 +23,18 @@ routes.get('/auction/:auctionUrl', async (req, res) => {
     }
 })
 
-routes.get('/cookies', async (req, res) => {
-    let cookies = []
-    const error = await puppetAction(testUser, testPass, async (page) => {
-        cookies = await page.cookies()
+routes.post('/session', async (req, res) => {
+    const ret = {}
+    const error = await puppetAction(req.body.userId, req.body.pw, async (page) => {
+        ret[sessionFields.cookie.name] = await page.cookies()
         console.log('browser retrieved cookies')
-        cookies.push({
-            name: '_csrf',
-            value: await page.$eval('head > meta[name="_csrf"]', element => element.content)
-        })
+        ret[sessionFields.csrf.name] = await page.$eval('head > meta[name="_csrf"]', element => element.content)
         console.log('browser retrieved metadata')
     })
     if (error) {
         res.status(error.status || 500).send(error.clean)
     }
-    res.status(200).send(JSON.stringify(cookies))
+    res.status(200).send(JSON.stringify(ret))
 })
 
 module.exports = routes

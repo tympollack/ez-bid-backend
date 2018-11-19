@@ -67,9 +67,9 @@ exports.test = functions.https.onRequest((req, res) => {
 
 const exapp = express()
 const router = express.Router()
-router.use('/api/auctions/', require('./api/auctions/auctions'))
-router.use('/api/items/', require('./api/items/items'))
-router.use('/api/users/', require('./api/users/users'))
+router.use('/auctions/', require('./api/auctions/auctions'))
+router.use('/items/', require('./api/items/items'))
+router.use('/users/', require('./api/users/users'))
 exapp.use(router)
 exports.api = functions.https.onRequest(exapp)
 

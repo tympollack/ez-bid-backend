@@ -33,27 +33,27 @@ exports.collections = {
         }
     },
 
-    sessions: {
-        name: 'sessions',
-        fields: {
-            cookie: {
-                name: 'cookie',
-                path: 'sessions/{cookie}'
-            },
-            csrf: {
-                name: 'csrf',
-                path: 'sessions/{csrf}'
-            }
-        }
-    },
-
     users: {
         name: 'users',
         fields: {
             id: {
                 name: 'userId',
                 path: 'users/{userId}'
-            }
+            },
+            session: {
+                name: 'session',
+                fields: {
+                    cookie: {
+                        name: 'cookie',
+                    },
+                    csrf: {
+                        name: 'csrf',
+                    },
+                    expiration: {
+                        name: 'expiration',
+                    }
+                }
+            },
         },
     },
 }
