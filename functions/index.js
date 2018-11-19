@@ -1,13 +1,8 @@
 const express = require('express')
-const cors = require('cors')({ origin: true })
-const fetch = require('node-fetch')
-
 const admin = require('firebase-admin')
 const functions = require('firebase-functions')
 const firebase = require('firebase')
 require('firebase/firestore')
-
-const utils = require('./utils')
 
 admin.initializeApp(functions.config().firebase)
 const db = admin.firestore()
@@ -27,174 +22,62 @@ exports.shareable = {
     // }
 // })
 
-exports.puppeteering = require('./puppeteering')
-// exports.api = {
-//     auction: require('./api/auction/auction'),
-//     item: require('./api/item/item'),
-//     user: require('./api/user/user'),
-// }
-exports.firestoreReactive = require('./firestoreReactive')
-
-
-///////////////////////////////////////////////////////////////////////////////////
-///////////////////////////   HELPERS   ///////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
-
 exports.test = functions.https.onRequest((req, res) => {
     res.status(200).send('poop')
 })
 
-exports.testBeta = functions.https.onRequest((req, res) => {
-    cors(req, res, async () => {
-        const url = 'https://beta.bidfta.com/bidfta/getUpdateItems'
-        const params = {
-            _csrf: '9283accd-8f81-43d8-abc4-b3fea7e4487d',
-            method: 'POST',
-            mode: 'no-cors',
-            cache: 'no-cache',
-            credentials: 'same-origin',
-            headers: {
-                'accept': 'application/json',
-                'content-type': 'application/json',
-                'cookie': 'JSESSIONID=33550E49F4F44FC10A9BCB6ECA5925A5',
-                'x-csrf-token': '9283accd-8f81-43d8-abc4-b3fea7e4487d',
-                'x-requested-with': 'XMLHttpRequest'
-            },
-            redirect: 'follow',
-            referrer: 'no-referrer',
-            // body: {'idBidders':'xxx','idItems':[108844],'idauctions':0}
-            body: JSON.stringify({'idBidders':'xxx','idItems':[108844],'idauctions':0})
-        }
-
-        fetch(url, params).then(response => {
-            const contentType = response.headers.get("content-type")
-            if(contentType && contentType.includes("application/json")) {
-                const ret = JSON.stringify(response.json())
-                console.log('json', ret)
-                return ret
-            }
-            const ret = response.text()
-            console.log('text', ret)
-            return ret
-        })
-                .then(d => {
-                    res.status(200).send(d)
-                })
-            .catch(error => {
-                console.log('error:', error)
-                res.status(200).send(error)
-            })
-        // fetch(url, params).then(response => res.status(200).send(response))
-    })
-})
-
-// exports.user = functions.https.onRequest((req, res) => {
-    // // console.log(req)
-    //
-    // switch(req.method) {
-    //     case 'GET':
-    //         user__get()
-    //         res.status(200).send(req.url)
-    //         break
-    //     case 'POST':
-    //         res.status(200).send('posted')
-    //         break
-    //     default:
-    //         res.status(404).send()
-    // }
-    // const username = 'testfoo'
-    // const userDoc = db.collection('users').doc(username)
-    // userDoc.get().then(user => {
-    //     if (user.exists) {
-    //         const error = 'User already exists: ' + username
-    //         console.error('testAddtoFirestore user already exists', error)
-    //         res.status(200).send(error)
-    //         return
-    //     }
-    //
-    //     userDoc.set({
-    //         id: username,
-    //         name: 'poop'
-    //     }).then(docRef => {
-    //         console.log('testAddToFirestore document written with id', docRef)
-    //         res.status(200).send(JSON.stringify(docRef))
-    //     }).catch(error => {
-    //         console.error('testAddToFirestore error adding document', error)
-    //         res.status(200).send('Error adding user ' + username)
-    //     })
-    // })
+// exports.processNewAuctions = functions.https.onRequest(async (req, res) => {
+//         const maxPages = 2
+//         let i = 1
+//         let total = 0
+//         let continueProcessing
+//
+//         do {
+//             const url = auctionsUrl + i
+//             continueProcessing = await fetch(url, params).then(response => response.json())
+//                 .then(async d => {
+//                     const auctionList = d.content
+//                     const len = auctionList.length
+//                     if (!len) return false
+//
+//                     total += len
+//                     console.log('getAuctionList processing page', i)
+//                     return await addAuctionListToFirestore(auctionList)
+//                 })
+//                 .catch(error => {
+//                     console.log('error:', error)
+//                     return false
+//                 })
+//             i++
+//         } while (continueProcessing && i < maxPages)
+//
+//         console.log('getAuctionList processed', i, utils.pluralize('page', i), total, utils.pluralize('auction', total))
+//
+//         res.status(200).send(JSON.stringify({
+//             totalPages: i,
+//             totalAuctions: total
+//         }))
 // })
 
-
-
-///////////////////////////////////////////////////////////////////////////////////
-/////////////////////   OUTSIDE INTERACTION   /////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
-
-// const data = {
-//     q: 'showTimeRemaining=0'
+// function addAuctionListToFirestore(auctionList) {
+//     const batchSize = auctionList.length
+//     console.log('addAuctionListToFirestore adding', batchSize, utils.pluralize('auction', batchSize))
+//
 // }
-
-exports.processNewAuctions = functions.https.onRequest(async (req, res) => {
-    cors(req, res, async () => {
-        console.log(req.body)
-
-        const auctionsUrl = 'http://bidfta.bidqt.com/BidFTA/services/invoices/WlAuctions/filter?sort=createdTs%20desc&size=2&page='
-        const params = {
-            method: 'POST',
-            mode: 'no-cors',
-            cache: 'no-cache',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            redirect: 'follow',
-            referrer: 'no-referrer'
-        }
-
-        const maxPages = 2
-        let i = 1
-        let total = 0
-        let continueProcessing
-
-        do {
-            const url = auctionsUrl + i
-            continueProcessing = await fetch(url, params).then(response => response.json())
-                .then(async d => {
-                    const auctionList = d.content
-                    const len = auctionList.length
-                    if (!len) return false
-
-                    total += len
-                    console.log('getAuctionList processing page', i)
-                    return await addAuctionListToFirestore(auctionList)
-                })
-                .catch(error => {
-                    console.log('error:', error)
-                    return false
-                })
-            i++
-        } while (continueProcessing && i < maxPages)
-
-        console.log('getAuctionList processed', i, utils.pluralize('page', i), total, utils.pluralize('auction', total))
-
-        res.status(200).send(JSON.stringify({
-            totalPages: i,
-            totalAuctions: total
-        }))
-    })
-})
-
-function addAuctionListToFirestore(auctionList) {
-    const batchSize = auctionList.length
-    console.log('addAuctionListToFirestore adding', batchSize, utils.pluralize('auction', batchSize))
-
-}
 
 const exapp = express()
 const router = express.Router()
-router.use('/auctions/', require('./api/auctions/auctions'))
-router.use('/items/', require('./api/items/items'))
-router.use('/users/', require('./api/users/users'))
+router.use('/api/auctions/', require('./api/auctions/auctions'))
+router.use('/api/items/', require('./api/items/items'))
+router.use('/api/users/', require('./api/users/users'))
 exapp.use(router)
 exports.api = functions.https.onRequest(exapp)
+
+const puppetApp = express()
+const puppetRouter = express.Router()
+const puppetOps = { memory: '2GB', timeoutSeconds: 60 }
+puppetRouter.use('/puppeteering/', require('./puppeteering'))
+puppetApp.use(puppetRouter)
+exports.puppeteering = functions.runWith(puppetOps).https.onRequest(puppetApp)
+
+exports.firestoreReactive = require('./firestore-reactive')

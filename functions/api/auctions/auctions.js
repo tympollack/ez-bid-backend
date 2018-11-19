@@ -1,4 +1,4 @@
-//    /api/auctionss
+//    /api/auctions
 
 const FieldValue = require('firebase-admin').firestore.FieldValue
 
