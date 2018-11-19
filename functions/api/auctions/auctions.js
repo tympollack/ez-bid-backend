@@ -1,33 +1,42 @@
-const express = require('express')
-const cors = require('cors')({ origin: true })
-const bodyParser = require('body-parser')
-const functions = require('firebase-functions')
-const firebase = require('firebase')
-require('firebase/firestore')
+//    /api/auctionss
+
 const FieldValue = require('firebase-admin').firestore.FieldValue
 
 const master = require('../../index')
-const db = master.db
+const db = master.shareable.db
+const url = master.shareable.url + '/api/auctions/'
 
 const utils = require('../../utils')
 const vars = require('../../vars/vars')
 const collectionName = vars.firestore.collections.auctions.name
 
-const auctionApp = express()
-auctionApp.use(cors)
-auctionApp.use(bodyParser.json())
+const routes = require('express').Router()
 
-// /auction/auctionid
-
-auctionApp.get('/', async (req, res) => {
+routes.get('/', async (req, res) => {
     const query = req.query
-    console.log('GET /auction', query ? query : 'ALL')
+    console.log('GET /auctions', query ? query : 'ALL')
 
     try {
-        const ret = {}
-        const auctions = await db.collection(collectionName).get()
-        auctions.forEach(doc => ret[doc.id] = doc.data())
-        res.status(200).send(JSON.stringify(ret))
+        const content = []
+        const collection = await db.collection(collectionName).get()
+        collection.forEach(doc => {
+            const item = doc.data()
+            item._links = [{
+                self: {
+                    href: url + doc.id
+                }
+            }]
+            content.push(item)
+        })
+
+        const ret = {
+            content: content,
+            _links: [{
+                _rel: 'auctions',
+                href: url
+            }]
+        }
+        res.status(200).json(ret).send()
     } catch (e) {
         const easter = e.toString()
         console.error(easter)
@@ -35,9 +44,9 @@ auctionApp.get('/', async (req, res) => {
     }
 })
 
-auctionApp.get('/:id', async (req, res) => {
+routes.get('/:id', async (req, res) => {
     const id = req.params.id
-    console.log('GET /auction', id)
+    console.log('GET /auctions', id)
 
     try {
         const auction = await getAuctionById(id)
@@ -56,10 +65,10 @@ auctionApp.get('/:id', async (req, res) => {
     }
 })
 
-auctionApp.post('/', async(req, res) => {
+routes.post('/', async(req, res) => {
     const body = req.body
     const id = body.id
-    console.log('POST /auction', body)
+    console.log('POST /auctions', body)
 
     try {
         const doesExist = id && await getAuctionById(id)
@@ -77,10 +86,10 @@ auctionApp.post('/', async(req, res) => {
     }
 })
 
-auctionApp.put('/:id', async(req, res) => {
+routes.put('/:id', async(req, res) => {
     const body = req.body
     const id = req.params.id
-    console.log('PUT /auction', id, body)
+    console.log('PUT /auctions', id, body)
 
     if (!id) {
         res.status(400).send()
@@ -97,10 +106,10 @@ auctionApp.put('/:id', async(req, res) => {
     }
 })
 
-auctionApp.patch('/:id', async(req, res) => {
+routes.patch('/:id', async(req, res) => {
     const body = req.body
     const id = req.params.id
-    console.log('PATCH /auction', id, body)
+    console.log('PATCH /auctions', id, body)
 
     try {
         const doesExist = id && await getAuctionById(id)
@@ -119,9 +128,9 @@ auctionApp.patch('/:id', async(req, res) => {
 })
 
 // Warning: Deleting a document does not delete its subcollections!
-auctionApp.delete('/:id', async(req, res) => {
+routes.delete('/:id', async(req, res) => {
     const id = req.params.id
-    console.log('DELETE /auction', id)
+    console.log('DELETE /auctions', id)
 
     try {
         const doc = await db.collection(collectionName).doc(id)
@@ -139,4 +148,4 @@ const getAuctionById = id => {
     return utils.firestoreGetThingById(db, collectionName, id)
 }
 
-exports.auction = functions.https.onRequest(auctionApp)
+module.exports = routes

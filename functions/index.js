@@ -12,7 +12,11 @@ const utils = require('./utils')
 admin.initializeApp(functions.config().firebase)
 const db = admin.firestore()
 db.settings({ timestampsInSnapshots: true })
-exports.db = db
+exports.shareable = {
+    db: db,
+    functions: functions,
+    url: 'http://localhost:5000/ezbidfta867/us-central1'
+}
 // db.enablePersistence().catch(error => {
 //     if (error.code === 'failed-precondition') {
         // Multiple tabs open, persistence can only be enabled
@@ -24,11 +28,11 @@ exports.db = db
 // })
 
 exports.puppeteering = require('./puppeteering')
-exports.api = {
-    auction: require('./api/auction/auction'),
-    item: require('./api/item/item'),
-    user: require('./api/user/user'),
-}
+// exports.api = {
+//     auction: require('./api/auction/auction'),
+//     item: require('./api/item/item'),
+//     user: require('./api/user/user'),
+// }
 exports.firestoreReactive = require('./firestoreReactive')
 
 
@@ -186,3 +190,11 @@ function addAuctionListToFirestore(auctionList) {
     console.log('addAuctionListToFirestore adding', batchSize, utils.pluralize('auction', batchSize))
 
 }
+
+const exapp = express()
+const router = express.Router()
+router.use('/auctions/', require('./api/auctions/auctions'))
+router.use('/items/', require('./api/items/items'))
+router.use('/users/', require('./api/users/users'))
+exapp.use(router)
+exports.api = functions.https.onRequest(exapp)
