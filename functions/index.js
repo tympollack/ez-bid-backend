@@ -4,14 +4,24 @@ const functions = require('firebase-functions')
 const firebase = require('firebase')
 require('firebase/firestore')
 
+const vars = require('./vars/vars')
+
 admin.initializeApp(functions.config().firebase)
 const db = admin.firestore()
 db.settings({ timestampsInSnapshots: true })
+
+const productPicturesBucketName = functions.config()[vars.config.productPicturesBucket].key
+
 exports.shareable = {
     db: db,
     functions: functions,
+    productPicturesBucket: {
+        name: productPicturesBucketName,
+        bucket: admin.storage().bucket(productPicturesBucketName)
+    },
     url: 'http://localhost:5000/ezbidfta867/us-central1'
 }
+
 // db.enablePersistence().catch(error => {
 //     if (error.code === 'failed-precondition') {
         // Multiple tabs open, persistence can only be enabled
@@ -81,3 +91,7 @@ puppetApp.use(puppetRouter)
 exports.puppeteering = functions.runWith(puppetOps).https.onRequest(puppetApp)
 
 exports.firestoreReactive = require('./firestore-reactive')
+
+exports.app = require('./auth')
+
+exports.resizeImages = require('./resize-images')
