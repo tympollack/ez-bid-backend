@@ -7,6 +7,8 @@ const routes = require('express').Router()
 const vars = require('./vars/vars')
 const sessionFields = vars.firestore.collections.users.fields.session.fields
 
+const puppetVars = require('./vars/puppeteer')
+
 routes.get('/auction/:auctionUrl', async (req, res) => {
     const auctionUrl = req.params.auctionUrl
     if (!auctionUrl) {
@@ -25,16 +27,18 @@ routes.get('/auction/:auctionUrl', async (req, res) => {
 
 routes.post('/session', async (req, res) => {
     const ret = {}
-    const error = await puppetAction(req.body.userId, req.body.pw, async (page) => {
+    const { userId, pw} = req.body
+    const error = await puppetAction(userId, pw, async (page) => {
         ret[sessionFields.cookie.name] = await page.cookies()
         console.log('browser retrieved cookies')
-        ret[sessionFields.csrf.name] = await page.$eval('head > meta[name="_csrf"]', element => element.content)
+        ret[sessionFields.csrf.name] = await page.$eval(puppetVars.selectors.meta.csrf, element => element.content)
         console.log('browser retrieved metadata')
     })
     if (error) {
         res.status(error.status || 500).send(error.clean)
+    } else {
+        res.status(200).json(ret)
     }
-    res.status(200).send(JSON.stringify(ret))
 })
 
 module.exports = routes
@@ -50,8 +54,8 @@ const puppetAction = async (user, pass, next) => {
         console.log('browser at new fta login screen')
 
         // login process
-        await page.type('#username', user, { delay: 100 })
-        await page.type('#password', pass, { delay: 100 })
+        await page.type(puppetVars.selectors.login.username, user, { delay: 100 })
+        await page.type(puppetVars.selectors.login.password, pass, { delay: 100 })
         await Promise.all([
             page.keyboard.press('Enter'),
             page.waitForNavigation(waitUntilIdle),

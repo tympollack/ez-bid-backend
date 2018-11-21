@@ -1,6 +1,6 @@
 exports.beta = {
-    login: 'https://beta.bidfta.com/login',
-    deleteItemFromWatchlist: 'https://beta.bidfta.com/deleteItemFromWatchlist',
-    saveItemToWatchlist: 'https://beta.bidfta.com/saveItemToWatchlist',
-    watchlist: 'https://beta.bidfta.com/dashboard?source=watchlist'
+    login: 'https://www.bidfta.com/login',
+    deleteItemFromWatchlist: 'https://www.bidfta.com/deleteItemFromWatchlist',
+    saveItemToWatchlist: 'https://www.bidfta.com/saveItemToWatchlist',
+    watchlist: 'https://www.bidfta.com/dashboard?source=watchlist'
 }

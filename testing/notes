@@ -62,7 +62,13 @@ user flow:
 
 
 automated flow:
-    cron -> non-api functions -> task queue / handlers -> firestore / database / notifications
+    cron ->
+        app function ->
+            pubsub ->
+                non-api function ->
+                    task queue / handlers ->
+                        pubsub ->
+                            firestore / database / notifications
 
 
 

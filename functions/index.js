@@ -1,4 +1,5 @@
 const express = require('express')
+const cors = require('cors')({ origin: true })
 const admin = require('firebase-admin')
 const functions = require('firebase-functions')
 const firebase = require('firebase')
@@ -10,7 +11,8 @@ admin.initializeApp(functions.config().firebase)
 const db = admin.firestore()
 db.settings({ timestampsInSnapshots: true })
 
-const productPicturesBucketName = functions.config()[vars.config.productPicturesBucket].key
+// const productPicturesBucketName = functions.config()[vars.config.productPicturesBucket].key
+const productPicturesBucketName = '8a0ad4d8-ec09-4bb7-9629-89d7fe7cbd26'
 
 exports.shareable = {
     db: db,
@@ -22,58 +24,9 @@ exports.shareable = {
     url: 'http://localhost:5000/ezbidfta867/us-central1'
 }
 
-// db.enablePersistence().catch(error => {
-//     if (error.code === 'failed-precondition') {
-        // Multiple tabs open, persistence can only be enabled
-        // in one tab at a a time.
-    // } else if (error.code === 'unimplemented') {
-        // The current browser does not support all of the
-        // features required to enable persistence
-    // }
-// })
-
 exports.test = functions.https.onRequest((req, res) => {
     res.status(200).send('poop')
 })
-
-// exports.processNewAuctions = functions.https.onRequest(async (req, res) => {
-//         const maxPages = 2
-//         let i = 1
-//         let total = 0
-//         let continueProcessing
-//
-//         do {
-//             const url = auctionsUrl + i
-//             continueProcessing = await fetch(url, params).then(response => response.json())
-//                 .then(async d => {
-//                     const auctionList = d.content
-//                     const len = auctionList.length
-//                     if (!len) return false
-//
-//                     total += len
-//                     console.log('getAuctionList processing page', i)
-//                     return await addAuctionListToFirestore(auctionList)
-//                 })
-//                 .catch(error => {
-//                     console.log('error:', error)
-//                     return false
-//                 })
-//             i++
-//         } while (continueProcessing && i < maxPages)
-//
-//         console.log('getAuctionList processed', i, utils.pluralize('page', i), total, utils.pluralize('auction', total))
-//
-//         res.status(200).send(JSON.stringify({
-//             totalPages: i,
-//             totalAuctions: total
-//         }))
-// })
-
-// function addAuctionListToFirestore(auctionList) {
-//     const batchSize = auctionList.length
-//     console.log('addAuctionListToFirestore adding', batchSize, utils.pluralize('auction', batchSize))
-//
-// }
 
 const exapp = express()
 const router = express.Router()
@@ -95,3 +48,62 @@ exports.firestoreReactive = require('./firestore-reactive')
 exports.app = require('./auth')
 
 exports.resizeImages = require('./resize-images')
+
+exports.cron = require('./cron')
+
+exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
+    const csrf = 'ce7d59aa-1a43-48c3-9662-e43d738bb495'
+    const cookie = 'JSESSIONID=A563C94331B2B754A5623FC143A32A3C;' +
+        'AWSALB=ZZ5VEXYtk2xw4ZVPFaMxHYNYU6sav5tcvrrg6Owf9C83jCBWJtJLqw+M1045qNzAI6lSG7V8QuhlhV6rIxUyJXGKP7WsQpRd7E2BLcFjfmS8mdSbENoq9dktmjri'
+
+    const baseUrl = 'https://www.bidfta.com/auctionDetails?idauctions='
+    const params = {
+        method: 'POST',
+        mode: 'no-cors',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'cookie': cookie,
+            'x-csrf-token': csrf
+        },
+        redirect: 'follow',
+    }
+
+    const oops = 'Oops Something went wrong.'
+    const ret = {
+        goodNumbers: [],
+        badNumbers: [],
+        errors: {}
+    }
+
+    const promises = []
+
+    const auctionStart = 6000
+    for (let i = 0, max = 1000; i < max; i++) {
+        const promise = new Promise(resolve => {
+            cors(req, res, async () => {
+                const auctionNumber = auctionStart + i
+                const url = baseUrl + auctionNumber
+                console.log('Calling auction', auctionNumber)
+                await fetch(url, params)
+                    .then(response => response.text().then(r => {
+                        if (r.indexOf(oops) > -1) ret.badNumbers.push(auctionNumber)
+                        else ret.goodNumbers.push(auctionNumber)
+                    }))
+                    .catch(error => {
+                        ret.errors[auctionNumber] = error
+                    })
+                resolve()
+            })
+        })
+        promises.push(promise)
+    }
+    await Promise.all(promises)
+
+    ret.goodNumbers.sort()
+    ret.badNumbers.sort()
+
+    res.status(200).json(ret)
+})

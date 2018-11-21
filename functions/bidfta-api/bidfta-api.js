@@ -55,3 +55,65 @@ betaApp.get('/:userId/watchlist', (req, res) => {
 const getUserById = id => {
     return utils.firestoreGetThingById(db, varsUsers.name, id)
 }
+
+
+
+
+
+
+// const csrf = '99a57d27-e80d-4ca1-b1b6-092bc00bf33f'
+// const cookie = 'AWSALB=QYzVOX9XrdhOlV6Vrm5fuvlhohLFwvq8p5coyhudjPhVvDY5eWxPpWL8/lTVcMDAtD2xm7Ihqya0a5eW2FyYgj83i3y/uZuVi5mkE+7zT6qiVzRbc+0o8DT/B904; '
+//     + 'JSESSIONID=454C2E879A9338187B7B48273C55C181;'
+// cors(req, res, () => {
+//     const url = 'https://beta.bidfta.com/saveItemToWatchlist'
+//     const params = {
+//         method: 'POST',
+//         mode: 'no-cors',
+//         cache: 'no-cache',
+//         credentials: 'same-origin',
+//         headers: {
+//             'Accept': 'application/json',
+//             'Content-Type': 'application/json',
+//             'cookie': cookie,
+//             'x-csrf-token': csrf
+//         },
+//         redirect: 'follow',
+//         body: JSON.stringify({"idBidders":5195,"idItems":301532,"idAuctions":4295})
+//     }
+//
+//     fetch(url, params)
+//         .then(response => response.json().then(r => {
+//             res.status(200).send(r)
+//         }))
+//         .catch(error => {
+//             res.status(400).send(JSON.stringify(error))
+//         })
+// })
+//
+// const csrf = '99a57d27-e80d-4ca1-b1b6-092bc00bf33f'
+// const cookie = 'AWSALB=QYzVOX9XrdhOlV6Vrm5fuvlhohLFwvq8p5coyhudjPhVvDY5eWxPpWL8/lTVcMDAtD2xm7Ihqya0a5eW2FyYgj83i3y/uZuVi5mkE+7zT6qiVzRbc+0o8DT/B904; '
+//     + 'JSESSIONID=454C2E879A9338187B7B48273C55C181;'
+// cors(req, res, () => {
+//     const url = 'https://beta.bidfta.com/watchlist'
+//     const params = {
+//         method: 'POST',
+//         mode: 'no-cors',
+//         cache: 'no-cache',
+//         credentials: 'same-origin',
+//         headers: {
+//             'Accept': 'application/json',
+//             'Content-Type': 'application/json',
+//             'cookie': cookie,
+//             'x-csrf-token': csrf
+//         },
+//         redirect: 'follow',
+//     }
+//
+//     fetch(url, params)
+//         .then(response => response.text().then(r => {
+//             res.status(200).send(JSON.stringify(r))
+//         }))
+//         .catch(error => {
+//             res.status(400).send(JSON.stringify(error))
+//         })
+// })
