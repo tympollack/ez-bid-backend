@@ -4,10 +4,10 @@ const waitUntilIdle = { waitUntil: 'networkidle2' }
 
 const routes = require('express').Router()
 
-const vars = require('./vars/vars')
-const sessionFields = vars.firestore.collections.users.fields.session.fields
-
-const puppetVars = require('./vars/puppeteer')
+const config = module.parent.shareable.config
+const errors = config.errors
+const puppetConfig = config.puppeteer
+const sessionFields = config.firestore.collections.users.fields.session.fields
 
 routes.get('/auction/:auctionUrl', async (req, res) => {
     const auctionUrl = req.params.auctionUrl
@@ -31,7 +31,7 @@ routes.post('/session', async (req, res) => {
     const error = await puppetAction(userId, pw, async (page) => {
         ret[sessionFields.cookie.name] = await page.cookies()
         console.log('browser retrieved cookies')
-        ret[sessionFields.csrf.name] = await page.$eval(puppetVars.selectors.meta.csrf, element => element.content)
+        ret[sessionFields.csrf.name] = await page.$eval(puppetConfig.selectors.meta.csrf, element => element.content)
         console.log('browser retrieved metadata')
     })
     if (error) {
@@ -50,19 +50,20 @@ const puppetAction = async (user, pass, next) => {
     try {
 
         const page = await browser.newPage()
-        await page.goto(vars.urls.beta.login, waitUntilIdle)
+        await page.goto(config.urls.login, waitUntilIdle)
         console.log('browser at new fta login screen')
 
         // login process
-        await page.type(puppetVars.selectors.login.username, user, { delay: 100 })
-        await page.type(puppetVars.selectors.login.password, pass, { delay: 100 })
+        const loginSelectors = puppetConfig.selectors.login
+        await page.type(loginSelectors.username, user, { delay: 100 })
+        await page.type(loginSelectors.password, pass, { delay: 100 })
         await Promise.all([
             page.keyboard.press('Enter'),
             page.waitForNavigation(waitUntilIdle),
         ])
 
         const pageUrl = page.url()
-        const error = Object.entries(vars.errors).find((key, val) => pageUrl.indexOf(val.dirty) > -1)
+        const error = Object.entries(errors).find((key, val) => pageUrl.indexOf(val.dirty) > -1)
         if (error) return error
 
         console.log('browser logged in')
@@ -72,9 +73,9 @@ const puppetAction = async (user, pass, next) => {
         const easter = e.toString()
         console.log('error:', easter)
         if (e instanceof TimeoutError) {
-            return vars.errors.timeout
+            return errors.timeout
         }
-        const error = Object.assign({}, vars.errors.internalServerError)
+        const error = Object.assign({}, errors.internalServerError)
         error.clean += ' ' + easter
         return error
     } finally {

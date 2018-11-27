@@ -1,15 +1,13 @@
 const express = require('express')
-const functions = require('firebase-functions')
 const bodyParser = require('body-parser')
 const cors = require('cors')({ origin: true })
 const firebase = require('firebase')
 require('firebase/firestore')
 
-const master = require('../index')
-const db = master.db
+const shareable = module.parent.shareable
+const db = shareable.db
 
-const vars = require('./vars/vars')
-const varsUsers = vars.firestore.collections.users
+const varsUsers = shareable.config.firestore.collections.users
 const varsSession = varsUsers.fields.session
 const sessionFields = varsSession.fields
 
@@ -53,7 +51,7 @@ betaApp.get('/:userId/watchlist', (req, res) => {
 })
 
 const getUserById = id => {
-    return utils.firestoreGetThingById(db, varsUsers.name, id)
+    return shareable.utils.firestoreGetThingById(db, varsUsers.name, id)
 }
 
 
@@ -86,7 +84,7 @@ const getUserById = id => {
 //             res.status(200).send(r)
 //         }))
 //         .catch(error => {
-//             res.status(400).send(JSON.stringify(error))
+//             res.status(400).json(error)
 //         })
 // })
 //
@@ -111,9 +109,9 @@ const getUserById = id => {
 //
 //     fetch(url, params)
 //         .then(response => response.text().then(r => {
-//             res.status(200).send(JSON.stringify(r))
+//             res.status(200).json(r)
 //         }))
 //         .catch(error => {
-//             res.status(400).send(JSON.stringify(error))
+//             res.status(400).json(error)
 //         })
 // })

@@ -36,10 +36,10 @@
 //
 //         console.log('getAuctionList processed', i, utils.pluralize('page', i), total, utils.pluralize('auction', total))
 //
-//         res.status(200).send(JSON.stringify({
+//         res.status(200).json({
 //             totalPages: i,
 //             totalAuctions: total
-//         }))
+//         })
 // })
 
 // function addAuctionListToFirestore(auctionList) {

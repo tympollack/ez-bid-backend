@@ -1,3 +1,4 @@
+const config = require('./config/config').get()
 const express = require('express')
 const cors = require('cors')({ origin: true })
 const admin = require('firebase-admin')
@@ -5,23 +6,22 @@ const functions = require('firebase-functions')
 const firebase = require('firebase')
 require('firebase/firestore')
 
-const vars = require('./vars/vars')
+const utils = require('./utils')
 
 admin.initializeApp(functions.config().firebase)
 const db = admin.firestore()
 db.settings({ timestampsInSnapshots: true })
 
-// const productPicturesBucketName = functions.config()[vars.config.productPicturesBucket].key
-const productPicturesBucketName = '8a0ad4d8-ec09-4bb7-9629-89d7fe7cbd26'
-
-exports.shareable = {
+exports.shareable = module.shareable = {
+    config: config,
     db: db,
     functions: functions,
     productPicturesBucket: {
-        name: productPicturesBucketName,
-        bucket: admin.storage().bucket(productPicturesBucketName)
+        name: config.datastore.buckets.productPictures,
+        bucket: admin.storage().bucket(config.datastore.buckets.productPictures)
     },
-    url: 'http://localhost:5000/ezbidfta867/us-central1'
+    url: config.url.base + config.url.apiPath,
+    utils: utils
 }
 
 exports.test = functions.https.onRequest((req, res) => {
@@ -34,6 +34,7 @@ router.use('/auctions/', require('./api/auctions/auctions'))
 router.use('/items/', require('./api/items/items'))
 router.use('/users/', require('./api/users/users'))
 exapp.use(router)
+exapp.use(utils.tryCatchAsync)
 exports.api = functions.https.onRequest(exapp)
 
 const puppetApp = express()
@@ -49,7 +50,7 @@ exports.app = require('./auth')
 
 exports.resizeImages = require('./resize-images')
 
-exports.cron = require('./cron')
+exports.cron = require('./pubsub/listeners')
 
 exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
     const csrf = 'ce7d59aa-1a43-48c3-9662-e43d738bb495'

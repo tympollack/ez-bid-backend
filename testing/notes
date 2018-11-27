@@ -63,12 +63,15 @@ user flow:
 
 automated flow:
     cron ->
-        app function ->
-            pubsub ->
-                non-api function ->
-                    task queue / handlers ->
-                        pubsub ->
-                            firestore / database / notifications
+        calls app engine function ->
+            publishes pubsub topic ->
+
+                function listens to pubsub topic ->
+                    adds to task queue ->
+                        activates handlers ->
+
+                            publishes pubsub topic ->
+                                (firestore / database / notifications)
 
 
 
