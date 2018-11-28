@@ -47,10 +47,16 @@ module.exports = {
 
     datastore: {
         buckets: {
-            doc: 'Bucket names have been auto-generated for obfuscation.',
             productPictures: {
-                format: 'guid',
-                default: ''
+                name: {
+                    format: 'guid',
+                    default: ''
+                },
+
+                thumbPrefix: {
+                    format: String,
+                    default: 'thumb@'
+                }
             }
         }
     },
@@ -186,6 +192,12 @@ module.exports = {
                 doc: 'Topic added to by cron -> app engine.',
                 format: String,
                 default: 'find-new-auctions'
+            },
+
+            getNewUserSession: {
+                doc: 'Topic added to by user needing a new session.',
+                format: String,
+                default: 'get-new-user-session'
             }
         }
     },

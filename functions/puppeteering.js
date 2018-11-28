@@ -19,7 +19,7 @@ routes.get('/auction/:auctionUrl', async (req, res) => {
     try {
         console.log('puppeteer getting auction.js items from', auctionUrl)
     } catch (e) {
-        res.status(500).send(e.toString())
+        res.status(500).send('' + e)
     } finally {
         await browser.close()
     }
@@ -36,12 +36,14 @@ routes.post('/session', async (req, res) => {
     })
     if (error) {
         res.status(error.status || 500).send(error.clean)
-    } else {
-        res.status(200).json(ret)
+        return
     }
+    res.status(200).json(ret)
 })
 
 module.exports = routes
+
+/////////////////////////////////////////////////////////////////////
 
 const puppetAction = async (user, pass, next) => {
     // const browser = await puppeteer.launch({ headless: false }) // for testing purposes only

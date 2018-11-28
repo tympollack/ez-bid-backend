@@ -1,6 +1,7 @@
-const master = require('./index')
-const functions = master.shareable.functions
-const bucketRef = master.shareable.productPicturesBucket
+const shareable = module.parent.shareable
+const productPicturesBucketConfig = shareable.config.datastore.buckets.productPictures
+const bucketRef = shareable.functions.storage.bucket(productPicturesBucketConfig.name)
+const thumbPrefix = '' + productPicturesBucketConfig.thumbPrefix
 
 const { tmpdir } = require('os')
 const { join, dirname } = require('path')
@@ -8,12 +9,11 @@ const { join, dirname } = require('path')
 const sharp = require('sharp')
 const fs = require('fs-extra')
 
-exports.resize = functions.storage.bucket(bucketRef.name).object().onFinalize(async object => {
-    const bucket = bucketRef.bucket
+exports.resize = bucketRef.object().onFinalize(async object => {
     const filePath = object.name
     const fileName = filePath.split('/').pop()
 
-    if (fileName.includes('thumb@') || !object.contentType.includes('image')) {
+    if (fileName.includes(thumbPrefix) || !object.contentType.includes('image')) {
         console.log('exiting function')
         return false
     }
@@ -26,20 +26,20 @@ exports.resize = functions.storage.bucket(bucketRef.name).object().onFinalize(as
     await fs.ensureDir(workingDir)
 
     // 2. Download Source File
-    await bucket.file(filePath).download({ destination: tmpFilePath })
+    await bucketRef.file(filePath).download({ destination: tmpFilePath })
 
     // 3. Resize the images and define an array of upload promises
     const sizes = [64, 128, 256]
 
     const uploadPromises = sizes.map(async size => {
-        const thumbName = `thumb@${size}_${fileName}`
+        const thumbName = `${thumbPrefix}${size}_${fileName}`
         const thumbPath = join(workingDir, thumbName)
 
         // Resize source image
         await sharp(tmpFilePath).resize(size, size).toFile(thumbPath)
 
         // Upload to GCS
-        return bucket.upload(thumbPath, { destination: join(bucketDir, thumbName) })
+        return bucketRef.upload(thumbPath, { destination: join(bucketDir, thumbName) })
     })
 
     // 4. Run the upload operations

@@ -12,14 +12,10 @@ admin.initializeApp(functions.config().firebase)
 const db = admin.firestore()
 db.settings({ timestampsInSnapshots: true })
 
-exports.shareable = module.shareable = {
+module.shareable = {
     config: config,
     db: db,
     functions: functions,
-    productPicturesBucket: {
-        name: config.datastore.buckets.productPictures,
-        bucket: admin.storage().bucket(config.datastore.buckets.productPictures)
-    },
     url: config.url.base + config.url.apiPath,
     utils: utils
 }
@@ -32,6 +28,7 @@ const exapp = express()
 const router = express.Router()
 router.use('/auctions/', require('./api/auctions/auctions'))
 router.use('/items/', require('./api/items/items'))
+router.use('/locations/', require('./api/locations/locations'))
 router.use('/users/', require('./api/users/users'))
 exapp.use(router)
 exapp.use(utils.tryCatchAsync)
@@ -53,9 +50,9 @@ exports.resizeImages = require('./resize-images')
 exports.cron = require('./pubsub/listeners')
 
 exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
-    const csrf = 'ce7d59aa-1a43-48c3-9662-e43d738bb495'
-    const cookie = 'JSESSIONID=A563C94331B2B754A5623FC143A32A3C;' +
-        'AWSALB=ZZ5VEXYtk2xw4ZVPFaMxHYNYU6sav5tcvrrg6Owf9C83jCBWJtJLqw+M1045qNzAI6lSG7V8QuhlhV6rIxUyJXGKP7WsQpRd7E2BLcFjfmS8mdSbENoq9dktmjri'
+    const csrf = 'eb382da8-7bdc-4e10-b965-b1e9d6a228bb'
+    const cookie = 'JSESSIONID=BE52D99BE751BAEA92EEABFAD33AAEC2;' +
+        'AWSALB=8Y4ir7TWFwf52HTLO5M4tpufLr/wlkj8lcVqr/JdNc9/dBuUc2QdGEFCsO0IeoMPWs8IcJa3qbffVHSTNecETV4TGlM5kz8zVl+jZsgMvJifSqciCXkSUWpZ9Rll'
 
     const baseUrl = 'https://www.bidfta.com/auctionDetails?idauctions='
     const params = {
