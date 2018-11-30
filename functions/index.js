@@ -1,6 +1,7 @@
 const config = require('./config/config').get()
 const express = require('express')
 const cors = require('cors')({ origin: true })
+const cookieParser = require('cookie-parser')()
 const admin = require('firebase-admin')
 const functions = require('firebase-functions')
 const firebase = require('firebase')
@@ -13,6 +14,7 @@ const db = admin.firestore()
 db.settings({ timestampsInSnapshots: true })
 
 module.shareable = {
+    admin: admin,
     config: config,
     db: db,
     functions: functions,
@@ -30,20 +32,24 @@ router.use('/auctions/', require('./api/auctions/auctions'))
 router.use('/items/', require('./api/items/items'))
 router.use('/locations/', require('./api/locations/locations'))
 router.use('/users/', require('./api/users/users'))
-exapp.use(router)
+exapp.use(cors)
+exapp.use(cookieParser)
+// exapp.use(utils.validateFirebaseIdToken)
 exapp.use(utils.tryCatchAsync)
+exapp.use(router) // must be after others
 exports.api = functions.https.onRequest(exapp)
 
 const puppetApp = express()
 const puppetRouter = express.Router()
 const puppetOps = { memory: '2GB', timeoutSeconds: 60 }
 puppetRouter.use('/puppeteering/', require('./puppeteering'))
-puppetApp.use(puppetRouter)
+puppetApp.use(cors)
+puppetApp.use(cookieParser)
+// puppetApp.use(utils.validateFirebaseIdToken)
+puppetApp.use(puppetRouter) // must be after others
 exports.puppeteering = functions.runWith(puppetOps).https.onRequest(puppetApp)
 
 exports.firestoreReactive = require('./firestore-reactive')
-
-exports.app = require('./auth')
 
 exports.resizeImages = require('./resize-images')
 

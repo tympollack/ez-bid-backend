@@ -10,7 +10,9 @@ exports.findNewAuctions = pubsub.topic(topics.findNewAuctions).onPublish(message
     }
 })
 
-exports.userNeedsNewSession = pubsub.topic(topics.findNewAuctions).onPublish(message => {
+// session needs renewed -> add to task queue -> handler calls puppeteer function ->
+// todo - i dont think this needs to be here anymore
+exports.getnewUserSession = pubsub.topic(topics.getNewUserSession).onPublish(message => {
     console.log('Getting user session...')
     if (message.data) {
         const dataString = Buffer.from(message.data, 'base64').toString()
