@@ -203,6 +203,18 @@ module.exports = {
     },
 
     puppeteer: {
+        opts: {
+            memory: {
+                format: String,
+                default: '2GB'
+            },
+
+            timeoutSeconds: {
+                format: Number,
+                default: 60
+            }
+        },
+
         selectors: {
             meta: {
                 csrf: {

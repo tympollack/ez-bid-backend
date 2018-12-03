@@ -27,27 +27,22 @@ exports.test = functions.https.onRequest((req, res) => {
 })
 
 const exapp = express()
+addExpressMiddleware(exapp)
 const router = express.Router()
 router.use('/auctions/', require('./api/auctions/auctions'))
 router.use('/items/', require('./api/items/items'))
 router.use('/locations/', require('./api/locations/locations'))
 router.use('/users/', require('./api/users/users'))
-exapp.use(cors)
-exapp.use(cookieParser)
-// exapp.use(utils.validateFirebaseIdToken)
 exapp.use(utils.tryCatchAsync)
 exapp.use(router) // must be after others
 exports.api = functions.https.onRequest(exapp)
 
 const puppetApp = express()
+addExpressMiddleware(puppetApp)
 const puppetRouter = express.Router()
-const puppetOps = { memory: '2GB', timeoutSeconds: 60 }
 puppetRouter.use('/puppeteering/', require('./puppeteering'))
-puppetApp.use(cors)
-puppetApp.use(cookieParser)
-// puppetApp.use(utils.validateFirebaseIdToken)
 puppetApp.use(puppetRouter) // must be after others
-exports.puppeteering = functions.runWith(puppetOps).https.onRequest(puppetApp)
+exports.puppeteering = functions.runWith(config.puppeteer.opts).https.onRequest(puppetApp)
 
 exports.firestoreReactive = require('./firestore-reactive')
 
@@ -111,3 +106,11 @@ exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
 
     res.status(200).json(ret)
 })
+
+/////////////////////////////////////////////////////////////////////
+
+function addExpressMiddleware(app) {
+    exapp.use(cors)
+    exapp.use(cookieParser)
+    if (process.env.NODE_ENV === 'production') app.use(utils.validateFirebaseIdToken)
+}
