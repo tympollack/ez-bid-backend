@@ -4,18 +4,10 @@ const pubsub = shareable.functions.pubsub
 
 exports.findNewAuctions = pubsub.topic(topics.findNewAuctions).onPublish(message => {
     console.log('Finding new auctions...')
-    if (message.data) {
-        const dataString = Buffer.from(message.data, 'base64').toString()
-        console.log(`Message Data: ${dataString}`)
-    }
-})
 
-// session needs renewed -> add to task queue -> handler calls puppeteer function ->
-// todo - i dont think this needs to be here anymore
-exports.getnewUserSession = pubsub.topic(topics.getNewUserSession).onPublish(message => {
-    console.log('Getting user session...')
-    if (message.data) {
-        const dataString = Buffer.from(message.data, 'base64').toString()
-        console.log(`Message Data: ${dataString}`)
-    }
+    // get service account session
+
+    // get auction set = bad numbers + (last good auction number + 1000)
+
+    // add auction info in firestore -> which will kick off getting items
 })

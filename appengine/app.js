@@ -19,11 +19,11 @@ app.use(async (req, res, next) => {
 app.get('/publish/:topic', async (req, res) => {
     const topic = req.params.topic
     await pubsubClient.topic(topic).publisher().publish(Buffer.from('test'))
-    res.status(200).send('Published to ' + topic).end()
+    res.send('Published to ' + topic).end()
 })
 
 app.get('/', (req, res) => {
-    res.status(200).send('[functions-cron]: Hello, world!').end()
+    res.send('poop')
 })
 
 const PORT = process.env.PORT || 6060

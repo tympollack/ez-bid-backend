@@ -1,0 +1,6 @@
+queue:
+  -name: loginQueue
+  rate: 10/s
+  retry_parameters:
+    task_limit_retry: 3
+    task_age_limit: 10m

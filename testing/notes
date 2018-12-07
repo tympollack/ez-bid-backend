@@ -67,11 +67,13 @@ automated flow:
             publishes pubsub topic ->
 
                 function listens to pubsub topic ->
+                    does work or ->
                     adds to task queue ->
                         activates handlers ->
-
                             publishes pubsub topic ->
-                                (firestore / database / notifications)
+
+                                firebase function ->
+                                    (firestore / database / notifications)
 
 
 

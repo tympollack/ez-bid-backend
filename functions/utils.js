@@ -1,10 +1,13 @@
-exports.firestoreGetThingById = (db, collection, id) => {
-    return new Promise(resolve => {
-        db.collection(collection)
-            .doc(id)
-            .onSnapshot(doc => {
-                resolve(doc.data())
-            })
+exports.fsGetObjectById = (db, collection, id) => {
+    return new Promise(async resolve => {
+        const doc = await db.collection(collection).doc(id).get()
+        resolve(doc.data())
+    })
+}
+
+exports.fsGetDocById = (db, collection, id) => {
+    return new Promise(async resolve => {
+        resolve(await db.collection(collection).doc(id))
     })
 }
 
@@ -62,5 +65,49 @@ exports.validateFirebaseIdToken = async (req, res, next) => {
     } catch (error) {
         console.error('Error while verifying Firebase ID token:', error)
         res.status(403).send('Unauthorized')
+    }
+}
+
+exports.createTask = async (queue, payload) => {
+    const cloudTasks = require('@google-cloud/tasks')
+    const client = new cloudTasks.CloudTasksClient()
+    const firebaseConfig = process.env.FIREBASE_CONFIG
+    console.log(queue)
+    const parent = client.queuePath(firebaseConfig.projectId, firebaseConfig.cloudResourceLocation, queue)
+    const options = { payload: payload }
+
+    const task = {
+        appEngineHttpRequest: {
+            httpMethod: 'POST',
+            relativeUri: `/publish/${queue}`,
+        },
+    }
+
+    if (options.payload !== undefined) {
+        task.appEngineHttpRequest.body = Buffer.from(options.payload).toString(
+            'base64'
+        )
+    }
+
+    if (options.inSeconds !== undefined) {
+        task.scheduleTime = {
+            seconds: options.inSeconds + Date.now() / 1000,
+        }
+    }
+
+    const request = {
+        parent: parent,
+        task: task,
+    }
+
+    console.log('Sending task %j', task)
+    try {
+        const response = await client.createTask(request)
+        const task = response[0].name
+        console.log(`Created task ${task}`)
+        return true
+    } catch (e) {
+        console.error(`Error in createTask: ${e.message || e}`)
+        return false
     }
 }

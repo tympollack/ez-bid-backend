@@ -22,7 +22,7 @@ module.exports = routes
 /////////////////////////////////////////////////////////////////////
 
 const getLocationById = id => {
-    return shareable.utils.firestoreGetThingById(db, collectionName, id)
+    return shareable.utils.fsGetObjectById(db, collectionName, id)
 }
 
 async function queryLocations(req, res) {

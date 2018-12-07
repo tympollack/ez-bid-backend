@@ -5,7 +5,7 @@ const waitUntilIdle = { waitUntil: 'networkidle2' }
 const routes = require('express').Router()
 
 const config = module.parent.shareable.config
-const errors = config.errors
+const errors = config.httpResponses
 const puppetConfig = config.puppeteer
 const sessionFields = config.firestore.collections.users.fields.session.fields
 
@@ -27,7 +27,7 @@ routes.get('/auction/:auctionUrl', async (req, res) => {
 
 routes.post('/session', async (req, res) => {
     const ret = {}
-    const { userId, pw} = req.body
+    const { userId, pw } = req.body
     const error = await puppetAction(userId, pw, async (page) => {
         ret[sessionFields.cookie.name] = await page.cookies()
         console.log('browser retrieved cookies')

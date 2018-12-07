@@ -1,60 +1,60 @@
-const express = require('express')
-const bodyParser = require('body-parser')
-const cors = require('cors')({ origin: true })
-const firebase = require('firebase')
-require('firebase/firestore')
+const { config, db, utils } = module.parent.shareable
 
-const shareable = module.parent.shareable
-const db = shareable.db
+const { firestore, httpResponses } = config
+const fsUsersCollection = firestore.collections.users
+const sessionVars = fsUsersCollection.fields.session
+const fsSession = sessionVars.name
+const sessionFields = sessionVars.fields
+const fsCookie = sessionFields.cookie.name
+const fsCsrf = sessionFields.csrf.name
+const fsExpiration = sessionFields.expiration.name
 
-const varsUsers = shareable.config.firestore.collections.users
-const varsSession = varsUsers.fields.session
-const sessionFields = varsSession.fields
+const routes = require('express').Router()
+routes.param('userId', getSessionVars)
+routes.get('/:userId/watchlist', getWatchlist)
 
-const betaApp = express()
-betaApp.use(cors)
-betaApp.use(bodyParser.json)
-betaApp.use(async (req, res, next) => {
+module.exports = routes
+
+/////////////////////////////////////////////////////////////////////
+
+const getUserById = id => {
+    return utils.fsGetObjectById(db, fsUsersCollection.name, id)
+}
+
+const getUserDoc = id => {
+    return utils.fsGetDocById(db, fsUsersCollection.name, id)
+}
+
+async function getSessionVars(req, res, next) {
     const userId = req.params.userId
     if (!userId) {
         res.status(400).send('No user id supplied.')
         return
     }
 
-    const userDoc = await getUserById(userId)
-    if (!userDoc) {
+    const user = await getUserById(userId)
+    if (!user) {
         console.error('user not found for id', id)
         res.status(404).send()
         return
     }
 
     const timestamp = new Date().getTime()
-    let session = userDoc.get(varsSession.name)
-    if (!session
-        || !session[sessionFields.cookie.name]
-        || !session[sessionFields.csrf.name]
-        || session[sessionFields.expiration.name] < timestamp) {
-        // if session vars don't exist or are expired, call puppet session func
-        session = {} // todo add to login task queue -> puppet func
-        session[sessionFields.expiration.name] = timestamp + (24 * 3600 * 1000) // add 24 hrs
-        userDoc.update({ [varsSession.name]: session })
+    const session = user[fsSession]
+    if (!session || !session[fsCookie] || !session[fsCsrf] || !session[fsExpiration] || session[fsExpiration] < timestamp) {
+        const e = await utils.createTask() ? httpResponses.networkAuthenticationRequired : httpResponses.failedDependency
+        res.status(e.status).send(e.clean)
+        return
     }
 
-    req.locals.cookie = session[sessionFields.cookie.name]
-    req.locals.csrf = session[sessionFields.csrf.name]
-
+    req.locals.cookie = session[fsCookie]
+    req.locals.csrf = session[fsCsrf]
     next()
-})
-
-betaApp.get('/:userId/watchlist', (req, res) => {
-
-})
-
-const getUserById = id => {
-    return shareable.utils.firestoreGetThingById(db, varsUsers.name, id)
 }
 
-
+async function getWatchlist(req, res) {
+    res.json(req)
+}
 
 
 

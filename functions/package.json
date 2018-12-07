@@ -12,6 +12,7 @@
   "dependencies": {
     "@firebase/firestore": "^0.8.8",
     "@google-cloud/storage": "^2.3.1",
+    "@google-cloud/tasks": "^0.2.2",
     "body-parser": "^1.18.3",
     "convict": "^4.4.0",
     "cookie-parser": "^1.4.3",

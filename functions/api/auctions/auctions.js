@@ -24,7 +24,7 @@ module.exports = routes
 /////////////////////////////////////////////////////////////////////
 
 const getAuctionById = id => {
-    return shareable.utils.firestoreGetThingById(db, collectionName, id)
+    return shareable.utils.fsGetObjectById(db, collectionName, id)
 }
 
 async function queryAuctions(req, res) {

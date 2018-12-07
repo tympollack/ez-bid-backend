@@ -20,12 +20,21 @@ module.exports = {
         },
     },
 
-    errors: {
+    httpResponses: {
         badCredentials: {
             format: 'errorType',
             default: {
                 clean: 'Bad credentials',
                 dirty: 'error=Bad%20credentials',
+                status: 412
+            }
+        },
+
+        failedDependency: {
+            format: 'errorType',
+            default: {
+                clean: 'Failed dependency',
+                status: 424
             }
         },
 
@@ -34,6 +43,14 @@ module.exports = {
             default: {
                 clean: 'Internal server error',
                 status: 500,
+            }
+        },
+
+        networkAuthenticationRequired: {
+            format: 'errorType',
+            default: {
+                clean: 'Network authentication required',
+                status: 511,
             }
         },
 

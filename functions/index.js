@@ -26,16 +26,16 @@ exports.test = functions.https.onRequest((req, res) => {
     res.status(200).send('poop')
 })
 
-const exapp = express()
-addExpressMiddleware(exapp)
-const router = express.Router()
-router.use('/auctions/', require('./api/auctions/auctions'))
-router.use('/items/', require('./api/items/items'))
-router.use('/locations/', require('./api/locations/locations'))
-router.use('/users/', require('./api/users/users'))
-exapp.use(utils.tryCatchAsync)
-exapp.use(router) // must be after others
-exports.api = functions.https.onRequest(exapp)
+const apiApp = express()
+addExpressMiddleware(apiApp)
+const apiRouter = express.Router()
+apiRouter.use('/auctions/', require('./api/auctions/auctions'))
+apiRouter.use('/items/', require('./api/items/items'))
+apiRouter.use('/locations/', require('./api/locations/locations'))
+apiRouter.use('/users/', require('./api/users/users'))
+apiApp.use(utils.tryCatchAsync)
+apiApp.use(apiRouter) // must be after others
+exports.api = functions.https.onRequest(apiApp)
 
 const puppetApp = express()
 addExpressMiddleware(puppetApp)
@@ -43,6 +43,16 @@ const puppetRouter = express.Router()
 puppetRouter.use('/puppeteering/', require('./puppeteering'))
 puppetApp.use(puppetRouter) // must be after others
 exports.puppeteering = functions.runWith(config.puppeteer.opts).https.onRequest(puppetApp)
+
+const ftaApp = express()
+addExpressMiddleware(ftaApp)
+const ftaRouter = express.Router()
+ftaRouter.use('/', require('./bidfta-api/bidfta-api'))
+ftaApp.use(cors)
+ftaApp.use(utils.tryCatchAsync)
+ftaApp.use(ftaRouter) // must be after others
+exports.bidfta = functions.https.onRequest(ftaApp)
+// exports.bidfta = require('./bidfta-api/bidfta-api')
 
 exports.firestoreReactive = require('./firestore-reactive')
 
@@ -74,7 +84,7 @@ exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
     const ret = {
         goodNumbers: [],
         badNumbers: [],
-        errors: {}
+        httpResponses: {}
     }
 
     const promises = []
@@ -92,7 +102,7 @@ exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
                         else ret.goodNumbers.push(auctionNumber)
                     }))
                     .catch(error => {
-                        ret.errors[auctionNumber] = error
+                        ret.httpResponses[auctionNumber] = error
                     })
                 resolve()
             })
@@ -110,7 +120,7 @@ exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
 /////////////////////////////////////////////////////////////////////
 
 function addExpressMiddleware(app) {
-    exapp.use(cors)
-    exapp.use(cookieParser)
+    app.use(cors)
+    app.use(cookieParser)
     if (process.env.NODE_ENV === 'production') app.use(utils.validateFirebaseIdToken)
 }
