@@ -11,3 +11,8 @@ exports.findNewAuctions = pubsub.topic(topics.findNewAuctions).onPublish(message
 
     // add auction info in firestore -> which will kick off getting items
 })
+
+exports.loginQueue = pubsub.topic('loginqueue').onPublish(message => {
+    console.log('Processing queue: loginqueue')
+    console.log(message)
+})

@@ -1,3 +1,6 @@
+const config = require('./config/config').get()
+const cloudTasks = require('@google-cloud/tasks')
+
 exports.fsGetObjectById = (db, collection, id) => {
     return new Promise(async resolve => {
         const doc = await db.collection(collection).doc(id).get()
@@ -69,11 +72,10 @@ exports.validateFirebaseIdToken = async (req, res, next) => {
 }
 
 exports.createTask = async (queue, payload) => {
-    const cloudTasks = require('@google-cloud/tasks')
+    console.log(config)
     const client = new cloudTasks.CloudTasksClient()
-    const firebaseConfig = process.env.FIREBASE_CONFIG
-    console.log(queue)
-    const parent = client.queuePath(firebaseConfig.projectId, firebaseConfig.cloudResourceLocation, queue)
+    const { projectId, cloudResourceLocation } = config.firebase
+    const parent = client.queuePath(projectId, cloudResourceLocation, queue)
     const options = { payload: payload }
 
     const task = {
@@ -100,7 +102,7 @@ exports.createTask = async (queue, payload) => {
         task: task,
     }
 
-    console.log('Sending task %j', task)
+    console.log(`Sending task ${task}`)
     try {
         const response = await client.createTask(request)
         const task = response[0].name

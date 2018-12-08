@@ -42,7 +42,7 @@ async function getSessionVars(req, res, next) {
     const timestamp = new Date().getTime()
     const session = user[fsSession]
     if (!session || !session[fsCookie] || !session[fsCsrf] || !session[fsExpiration] || session[fsExpiration] < timestamp) {
-        const e = await utils.createTask() ? httpResponses.networkAuthenticationRequired : httpResponses.failedDependency
+        const e = await utils.createTask('loginqueue', user.id) ? httpResponses.networkAuthenticationRequired : httpResponses.failedDependency
         res.status(e.status).send(e.clean)
         return
     }

@@ -6,6 +6,20 @@ module.exports = {
         env: 'NODE_ENV'
     },
 
+    firebase: {
+        projectId: {
+            doc: 'ID of the project.',
+            format: String,
+            default: ''
+        },
+
+        cloudResourceLocation: {
+            doc: 'gcloud resource location.',
+            format: String,
+            default: ''
+        }
+    },
+
     url: {
         base: {
             doc: 'Base URL for HATEOAS.',
