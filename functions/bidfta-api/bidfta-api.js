@@ -11,7 +11,7 @@ const fsExpiration = sessionFields.expiration.name
 
 const routes = require('express').Router()
 routes.param('userId', getSessionVars)
-routes.get('/:userId/watchlist', getWatchlist)
+routes.get('/users/:userId/watchlist', getWatchlist)
 
 module.exports = routes
 

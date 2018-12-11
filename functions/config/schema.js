@@ -63,7 +63,7 @@ module.exports = {
         networkAuthenticationRequired: {
             format: 'errorType',
             default: {
-                clean: 'Network authentication required',
+                clean: 'Awaiting BidFTA credentials. Please wait a few seconds before trying again.',
                 status: 511,
             }
         },
@@ -225,10 +225,10 @@ module.exports = {
                 default: 'find-new-auctions'
             },
 
-            getNewUserSession: {
+            loginqueue: {
                 doc: 'Topic added to by user needing a new session.',
                 format: String,
-                default: 'get-new-user-session'
+                default: 'loginqueue'
             }
         }
     },

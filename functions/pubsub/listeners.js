@@ -1,9 +1,7 @@
-const functions = require('firebase-functions')
-const shareable = module.parent.shareable
-const topics = shareable.config.pubsub.topics
-const pubsub = shareable.functions.pubsub
+const { config, functions, puppeteer } = module.parent.shareable
+const topics = config.pubsub.topics
 
-exports.findNewAuctions = functions.pubsub.topic('find-new-auctions').onPublish(message => {
+exports.findNewAuctions = functions.pubsub.topic(topics.findNewAuctions).onPublish(message => {
     console.log('Finding new auctions...')
 
     // get service account session
@@ -13,7 +11,7 @@ exports.findNewAuctions = functions.pubsub.topic('find-new-auctions').onPublish(
     // add auction info in firestore -> which will kick off getting items
 })
 
-exports.loginQueue = pubsub.topic('loginqueue').onPublish(message => {
+exports.loginQueue = functions.runWith(config.puppeteer.opts).pubsub.topic(topics.loginqueue).onPublish(message => {
     console.log('Processing queue: loginqueue')
     console.log(message)
     if (message.data) {

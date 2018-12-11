@@ -4,9 +4,10 @@ const cors = require('cors')({ origin: true })
 const cookieParser = require('cookie-parser')()
 const admin = require('firebase-admin')
 const functions = require('firebase-functions')
-const firebase = require('firebase')
+require('firebase')
 require('firebase/firestore')
 
+const puppeteer = require('./puppeteering')
 const utils = require('./utils')
 
 admin.initializeApp(functions.config().firebase)
@@ -18,6 +19,7 @@ module.shareable = {
     config: config,
     db: db,
     functions: functions,
+    puppeteer: puppeteer,
     url: config.url.base + config.url.apiPath,
     utils: utils
 }
@@ -40,7 +42,7 @@ exports.api = functions.https.onRequest(apiApp)
 const puppetApp = express()
 addExpressMiddleware(puppetApp)
 const puppetRouter = express.Router()
-puppetRouter.use('/puppeteering/', require('./puppeteering'))
+puppetRouter.use('/puppeteering/', )
 puppetApp.use(puppetRouter) // must be after others
 exports.puppeteering = functions.runWith(config.puppeteer.opts).https.onRequest(puppetApp)
 
@@ -58,7 +60,7 @@ exports.firestoreReactive = require('./firestore-reactive')
 
 exports.resizeImages = require('./resize-images')
 
-exports.cron = require('./pubsub/listeners')
+exports.pubsub = require('./pubsub/listeners')
 
 exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
     const csrf = 'eb382da8-7bdc-4e10-b965-b1e9d6a228bb'

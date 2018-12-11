@@ -72,7 +72,6 @@ exports.validateFirebaseIdToken = async (req, res, next) => {
 }
 
 exports.createTask = async (queue, payload) => {
-    console.log(config)
     const client = new cloudTasks.CloudTasksClient()
     const { projectId, cloudResourceLocation } = config.firebase
     const parent = client.queuePath(projectId, cloudResourceLocation, queue)
