@@ -16,11 +16,8 @@ app.use(async (req, res, next) => {
     }
 })
 
-app.get('/publish/:topic', async (req, res) => {
-    const topic = req.params.topic
-    await pubsubClient.topic(topic).publisher().publish(Buffer.from('test'))
-    res.send('Published to ' + topic).end()
-})
+app.get('/publish/:topic', publishTopic)
+app.post('/publish/:topic', publishTopic)
 
 app.get('/', (req, res) => {
     res.send('poop')
@@ -31,3 +28,11 @@ app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`)
   console.log('Press Ctrl+C to quit.')
 })
+
+/////////////////////////////////////////////////////////////////////
+
+async function publishTopic(req, res) {
+    const topic = req.params.topic
+    await pubsubClient.topic(topic).publisher().publish(Buffer.from('test'))
+    res.send('Published to ' + topic).end()
+}

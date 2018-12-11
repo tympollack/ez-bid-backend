@@ -102,11 +102,11 @@ exports.createTask = async (queue, payload) => {
         task: task,
     }
 
-    console.log(`Sending task ${task}`)
+    console.log('Sending task', task)
     try {
         const response = await client.createTask(request)
-        const task = response[0].name
-        console.log(`Created task ${task}`)
+        const createdTask = response[0].name
+        console.log('Created task', createdTask)
         return true
     } catch (e) {
         console.error(`Error in createTask: ${e.message || e}`)
