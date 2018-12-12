@@ -160,36 +160,6 @@ async function updateUserSession(page, userId) {
     return session
 }
 
-// todo remove; committing for historical purposes
-async function getNewUserSession(req, res) {
-    const session = {}
-    const { userId, bidnum, bidpw } = res.locals
-    const error = await puppetAction(bidnum, bidpw, async (page) => {
-        const cookies = await page.cookies()
-        const jsessionId = findCookieByName(cookies, jsessionIdName)
-        const awsalb = findCookieByName(cookies, awsalbName)
-        session[fsCookie] = `${jsessionIdName}=${jsessionId};${awsalbName}=${awsalb}`
-        console.log('browser retrieved cookies')
-        session[fsCsrf] = await page.$eval(puppetConfig.selectors.meta.csrf, element => element.content)
-        console.log('browser retrieved metadata')
-    })
-
-    if (error) {
-        return { error: error }
-    }
-
-    const doc = await utils.fsGetDocById(db, fsUsersCollection.name, userId)
-    doc.set({
-        [fsSession]: {
-            ...session,
-            [fsExpiration]: Date.now() + 82800000
-        }
-    }, {merge: true})
-    console.log('set bidfta creds for user', userId)
-
-    return { session: session }
-}
-
 /////////////////////////////////////////////////////////////////////
 
 function findCookieByName(cookies, name) {
