@@ -7,7 +7,6 @@ const functions = require('firebase-functions')
 require('firebase')
 require('firebase/firestore')
 
-const puppeteer = require('./puppeteering')
 const utils = require('./utils')
 
 admin.initializeApp(functions.config().firebase)
@@ -17,12 +16,14 @@ db.settings({ timestampsInSnapshots: true })
 module.shareable = {
     admin: admin,
     config: config,
+    cors: cors,
     db: db,
     functions: functions,
-    puppeteer: puppeteer,
     url: config.url.base + config.url.apiPath,
     utils: utils
 }
+
+const puppeteer = module.shareable.puppeteer = require('./puppeteering')
 
 exports.test = functions.https.onRequest((req, res) => {
     res.status(200).send('poop')
@@ -42,7 +43,7 @@ exports.api = functions.https.onRequest(apiApp)
 const puppetApp = express()
 addExpressMiddleware(puppetApp)
 const puppetRouter = express.Router()
-puppetRouter.use('/puppeteering/', )
+puppetRouter.use('/puppeteering/', puppeteer)
 puppetApp.use(puppetRouter) // must be after others
 exports.puppeteering = functions.runWith(config.puppeteer.opts).https.onRequest(puppetApp)
 
@@ -54,7 +55,6 @@ ftaApp.use(cors)
 ftaApp.use(utils.tryCatchAsync)
 ftaApp.use(ftaRouter) // must be after others
 exports.bidfta = functions.https.onRequest(ftaApp)
-// exports.bidfta = require('./bidfta-api/bidfta-api')
 
 exports.firestoreReactive = require('./firestore-reactive')
 

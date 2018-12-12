@@ -1,4 +1,3 @@
-
 function getItemsUpdate(idBidders, idauctions, idItems){
     //$(".overlay").show();
     $.ajax({
@@ -510,6 +509,206 @@ function getBidMax(bidderId, itemId){
             } else {
                 //alert("Error in processing at Server. Please try after sometime. Error : " + res);
                 //$(".overlay").hide();
+            }
+        },
+
+    });
+}
+
+function sendSMSToken(phoneNumber, callBackFunc){
+    $(".overlay").show();
+    $.ajax({
+        url : 'sendSMSToken',
+        type : 'POST',
+        data: {
+            'phoneNumber' : phoneNumber
+        },
+        headers: { 'X-CSRF-Token': $("meta[name='_csrf']").attr("content") },
+        success : function(response) {
+            $(".overlay").hide();
+            callBackFunc();
+        },
+        error : function(response) {
+            $(".overlay").hide();
+            startResendVerificationCodeTimerError();
+        },
+
+    });
+}
+
+function smsCodeVerified(phoneNumber, email){
+    $(".overlay").show();
+    $.ajax({
+        url : 'smsCodeVerified',
+        type : 'POST',
+        data: {
+            'phoneNumber' : phoneNumber,
+            'email' : email
+        },
+        headers: { 'X-CSRF-Token': $("meta[name='_csrf']").attr("content") },
+        success : function(response) {
+            if(response.success == false){
+                sendSMSCode();
+            }else{
+                $(".overlay").hide();
+                smsCodeVerifiedFailed();
+            }
+        },
+        error : function(response) {
+            $(".overlay").hide();
+            smsCodeVerifiedError();
+        },
+
+    });
+}
+
+function verifySMSToken(phoneNumber, token){
+    $(".overlay").show();
+    $.ajax({
+        url : 'verifySMSToken',
+        type : 'POST',
+        data: {
+            'phoneNumber' : phoneNumber,
+            'token':token
+        },
+        headers: { 'X-CSRF-Token': $("meta[name='_csrf']").attr("content") },
+        success : function(response) {
+            $(".overlay").hide();
+            verifySMSTokenSuccess();
+        },
+        error : function(response) {
+            $(".overlay").hide();
+            verifySMSTokenError();
+        }
+    });
+}
+
+function getSMSNumber(email){
+    $.ajax({
+        url : 'getSMSNumber',
+        type : 'POST',
+        data: {
+            'email' : email
+        },
+        headers: { 'X-CSRF-Token': $("meta[name='_csrf']").attr("content") },
+        success : function(response) {
+            getSMSNumberSuccess(response);
+        },
+        error : function(res) {
+            if (res.status = 403 && res.getResponseHeader("Location")) {
+                //invalid csrf
+                window.location.href = res.getResponseHeader("Location");
+            } else {
+                //alert("Error in processing at Server. Please try after sometime. Error : " + res);
+                //$(".overlay").hide();
+            }
+        },
+
+    });
+}
+
+function updateSMSNumberDB(email, smsNumber){
+    $.ajax({
+        url : 'updateSMSNumber',
+        type : 'POST',
+        data: {
+            'email' : email,
+            'smsNumber' : smsNumber
+        },
+        headers: { 'X-CSRF-Token': $("meta[name='_csrf']").attr("content") },
+        success : function(response) {
+            updateSMSNumberDBSuccess(response);
+        },
+        error : function(res) {
+            if (res.status = 403 && res.getResponseHeader("Location")) {
+                //invalid csrf
+                window.location.href = res.getResponseHeader("Location");
+            } else {
+                //alert("Error in processing at Server. Please try after sometime. Error : " + res);
+                //$(".overlay").hide();
+            }
+        },
+
+    });
+}
+
+function verifySMSTokenResend(phoneNumber, token, callBackFunc){
+    $(".overlay").show();
+    $.ajax({
+        url : 'verifySMSToken',
+        type : 'POST',
+        data: {
+            'phoneNumber' : phoneNumber,
+            'token':token
+        },
+        headers: { 'X-CSRF-Token': $("meta[name='_csrf']").attr("content") },
+        success : function(response) {
+            console.log(response);
+            $(".overlay").hide();
+            verifySMSTokenResendSuccess(response);
+        },
+        error : function(response) {
+            console.log(response);
+            $(".overlay").hide();
+            verifySMSTokenResendError();
+        }
+
+    });
+}
+
+function checkEditedCellPhoneExistForAnyOtherBidder(bidderId, phoneNumber, callBackFunc) {
+    $.ajax({
+        url : 'checkEditedCellPhoneExistForAnyOtherBidder',
+        type : 'POST',
+        data: {
+            'bidderId' : bidderId,
+            'phoneNumber' : phoneNumber
+        },
+        headers: { 'X-CSRF-Token': $("meta[name='_csrf']").attr("content") },
+        success : function(response) {
+            debugger;
+            if (response.message) {
+                $('#smsNumber_msg').html(response.message).css('color', 'red');
+            } else {
+                callBackFunc();
+            }
+        },
+        error : function(response) {
+            if (res.status = 403 && res.getResponseHeader("Location")) {
+                //invalid csrf
+                window.location.href = res.getResponseHeader("Location");
+            } else {
+                //alert("Error in processing at Server. Please try after sometime. Error : " + res);
+                //$(".overlay").hide();
+            }
+        }
+    });
+}
+
+function getBidHistoryList(idItem){
+    $(".overlay").show();
+    $.ajax({
+        url : 'getBidHistoryListItem',
+        type : 'POST',
+        data: {
+            'idItems' : idItem,
+        },
+        headers: { 'X-CSRF-Token': $("meta[name='_csrf']").attr("content") },
+        /*beforeSend: function(xhr) {
+            xhr.setRequestHeader("Accept", "application/json");
+            xhr.setRequestHeader("Content-Type", "application/json");
+        },*/
+        success : function(response) {
+            getBidHistory(response);
+            $(".overlay").hide();
+        },
+        error : function(res) {
+            if (res.status = 403 && res.getResponseHeader("Location")) {
+                //invalid csrf
+                window.location.href = res.getResponseHeader("Location");
+            } else {
+                //alert("Error in processing at Server. Please try after sometime. Error : " + res);
+                $(".overlay").hide();
             }
         },
 

@@ -1,6 +1,6 @@
-const { config, db, utils } = module.parent.shareable
+const { cors, config, db, utils } = module.parent.shareable
 
-const { firestore, httpResponses } = config
+const { firestore, httpResponses, bidApiUrls } = config
 const fsUsersCollection = firestore.collections.users
 const sessionVars = fsUsersCollection.fields.session
 const fsSession = sessionVars.name
@@ -11,35 +11,32 @@ const fsExpiration = sessionFields.expiration.name
 
 const routes = require('express').Router()
 routes.param('userId', getSessionVars)
-routes.get('/users/:userId/watchlist', getWatchlist)
+routes.post('/users/:userId/watchlist', saveItemToWatchlist)
+routes.delete('/users/:userId/watchlist', deleteItemFromWatchlist)
+
+routes.use('/auctions', getSessionVars)
+routes.post('/auctions/:auctionId/items/:itemId/bid', placeAjaxBid)
+routes.post('/auctions/:auctionId/items/:itemId/maxBid', placeAjaxMaxBid)
 
 module.exports = routes
 
 /////////////////////////////////////////////////////////////////////
 
-const getUserById = id => {
-    return utils.fsGetObjectById(db, fsUsersCollection.name, id)
-}
-
-const getUserDoc = id => {
-    return utils.fsGetDocById(db, fsUsersCollection.name, id)
-}
-
 async function getSessionVars(req, res, next) {
-    const userId = req.params.userId
+    const userId = req.params.userId || req.body.userId
+    console.log(req.params.userId, req.body.userId, userId)
     if (!userId) {
-        res.status(400).send('No user id supplied.')
+        utils.sendHttpResponse(res, httpResponses.noUserId)
         return
     }
 
     const user = await getUserById(userId)
     if (!user) {
-        console.error('user not found for id', id)
-        res.status(404).send()
+        utils.sendHttpResponse(res, httpResponses.notFound)
         return
     }
 
-    const timestamp = new Date().getTime()
+    const timestamp = Date.now()
     const session = user[fsSession]
     if (!session || !session[fsCookie] || !session[fsCsrf] || !session[fsExpiration] || session[fsExpiration] < timestamp) {
         const e = await utils.createTask('loginqueue', user.id) ? httpResponses.networkAuthenticationRequired : httpResponses.failedDependency
@@ -47,71 +44,133 @@ async function getSessionVars(req, res, next) {
         return
     }
 
-    req.locals.cookie = session[fsCookie]
-    req.locals.csrf = session[fsCsrf]
+    res.locals.user = user
+    res.locals.cookie = session[fsCookie]
+    res.locals.csrf = session[fsCsrf]
     next()
 }
 
-async function getWatchlist(req, res) {
-    res.json(req)
+async function deleteItemFromWatchlist(req, res) {
+    const { auctionId, itemId } = req.body
+    if (!auctionId || !itemId) {
+        utils.sendHttpResponse(res, httpResponses.missingInformation)
+        return
+    }
+
+    const user = res.locals.user
+    const userId = user[fsUsersCollection.fields.id.name]
+    const bidnum = user[fsUsersCollection.fields.bidnum.name]
+    const body = {
+        idBidders: bidnum,
+        idItems: itemId,
+        idAuctions: auctionId
+    }
+
+    console.log('Removing item from watchlist', userId, bidnum, itemId, auctionId)
+    await callBidApi(req, res, bidApiUrls.deleteItemFromWatchlist, body)
 }
 
+async function saveItemToWatchlist(req, res) {
+    const { auctionId, itemId } = req.body
+    if (!auctionId || !itemId) {
+        utils.sendHttpResponse(res, httpResponses.missingInformation)
+        return
+    }
 
+    const user = res.locals.user
+    const userId = user[fsUsersCollection.fields.id.name]
+    const bidnum = user[fsUsersCollection.fields.bidnum.name]
+    const body = {
+        idBidders: bidnum,
+        idItems: itemId,
+        idAuctions: auctionId
+    }
 
+    console.log('Adding item to watchlist', userId, bidnum, itemId, auctionId)
+    await callBidApi(req, res, bidApiUrls.saveItemToWatchlist, body)
+}
 
-// const csrf = '99a57d27-e80d-4ca1-b1b6-092bc00bf33f'
-// const cookie = 'AWSALB=QYzVOX9XrdhOlV6Vrm5fuvlhohLFwvq8p5coyhudjPhVvDY5eWxPpWL8/lTVcMDAtD2xm7Ihqya0a5eW2FyYgj83i3y/uZuVi5mkE+7zT6qiVzRbc+0o8DT/B904; '
-//     + 'JSESSIONID=454C2E879A9338187B7B48273C55C181;'
-// cors(req, res, () => {
-//     const url = 'https://beta.bidfta.com/saveItemToWatchlist'
-//     const params = {
-//         method: 'POST',
-//         mode: 'no-cors',
-//         cache: 'no-cache',
-//         credentials: 'same-origin',
-//         headers: {
-//             'Accept': 'application/json',
-//             'Content-Type': 'application/json',
-//             'cookie': cookie,
-//             'x-csrf-token': csrf
-//         },
-//         redirect: 'follow',
-//         body: JSON.stringify({"idBidders":5195,"idItems":301532,"idAuctions":4295})
-//     }
-//
-//     fetch(url, params)
-//         .then(response => response.json().then(r => {
-//             res.status(200).send(r)
-//         }))
-//         .catch(error => {
-//             res.status(400).json(error)
-//         })
-// })
-//
-// const csrf = '99a57d27-e80d-4ca1-b1b6-092bc00bf33f'
-// const cookie = 'AWSALB=QYzVOX9XrdhOlV6Vrm5fuvlhohLFwvq8p5coyhudjPhVvDY5eWxPpWL8/lTVcMDAtD2xm7Ihqya0a5eW2FyYgj83i3y/uZuVi5mkE+7zT6qiVzRbc+0o8DT/B904; '
-//     + 'JSESSIONID=454C2E879A9338187B7B48273C55C181;'
-// cors(req, res, () => {
-//     const url = 'https://beta.bidfta.com/watchlist'
-//     const params = {
-//         method: 'POST',
-//         mode: 'no-cors',
-//         cache: 'no-cache',
-//         credentials: 'same-origin',
-//         headers: {
-//             'Accept': 'application/json',
-//             'Content-Type': 'application/json',
-//             'cookie': cookie,
-//             'x-csrf-token': csrf
-//         },
-//         redirect: 'follow',
-//     }
-//
-//     fetch(url, params)
-//         .then(response => response.text().then(r => {
-//             res.status(200).json(r)
-//         }))
-//         .catch(error => {
-//             res.status(400).json(error)
-//         })
-// })
+async function placeAjaxBid(req, res) {
+    const { auctionId, itemId } = req.params
+    const { currentBid, maxBid } = req.body
+    if (!auctionId || !itemId || !currentBid || !maxBid) {
+        utils.sendHttpResponse(res, httpResponses.missingInformation)
+        return
+    }
+
+    const user = res.locals.user
+    const userId = user[fsUsersCollection.fields.id.name]
+    const bidnum = user[fsUsersCollection.fields.bidnum.name]
+    const body = {
+        idBidders: bidnum,
+        idItems: itemId,
+        idAuctions: auctionId,
+        currentBid: currentBid,
+        maxBid: maxBid
+    }
+
+    console.log('Placing bid on item', userId, bidnum, itemId, auctionId, currentBid, maxBid)
+    await callBidApi(req, res, bidApiUrls.placeAjaxBid, body)
+}
+
+// todo not quite sure of the difference in api currently
+async function placeAjaxMaxBid(req, res) {
+    const { auctionId, itemId } = req.params
+    const { currentBid, maxBid } = req.body
+    if (!auctionId || !itemId || !currentBid || !maxBid) {
+        utils.sendHttpResponse(res, httpResponses.missingInformation)
+        return
+    }
+
+    const user = res.locals.user
+    const userId = user[fsUsersCollection.fields.id.name]
+    const bidnum = user[fsUsersCollection.fields.bidnum.name]
+    const body = {
+        idBidders: bidnum,
+        idItems: itemId,
+        idAuctions: auctionId,
+        currentBid: currentBid,
+        maxBid: maxBid
+    }
+
+    console.log('Placing max bid on item', userId, bidnum, itemId, auctionId, currentBid, maxBid)
+    await callBidApi(req, res, bidApiUrls.placeAjaxMaxBid, body)
+}
+
+/////////////////////////////////////////////////////////////////////
+
+function getUserById(id) {
+    return utils.fsGetObjectById(db, fsUsersCollection.name, id)
+}
+
+function getUserDoc(id) {
+    return utils.fsGetDocById(db, fsUsersCollection.name, id)
+}
+
+function callBidApi(req, res, url, body = {}) {
+    const { cookie, csrf } = res.locals
+    cors(req, res, () => {
+        const params = {
+            method: 'POST',
+            mode: 'no-cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'cookie': cookie,
+                'x-csrf-token': csrf
+            },
+            redirect: 'follow',
+            body: JSON.stringify(body)
+        }
+
+        fetch(url, params)
+            .then(response => response.json().then(r => {
+                res.send(r)
+            }))
+            .catch(error => {
+                res.status(400).json(error)
+            })
+    })
+}

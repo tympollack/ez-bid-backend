@@ -74,6 +74,30 @@ module.exports = {
                 clean: 'Timeout',
             }
         },
+
+        missingInformation: {
+            format: 'errorType',
+            default: {
+                clean: 'Request missing required information.',
+                status: 400,
+            }
+        },
+
+        noUserId: {
+            format: 'errorType',
+            default: {
+                clean: 'No user id supplied.',
+                status: 400,
+            }
+        },
+
+        notFound: {
+            format: 'errorType',
+            default: {
+                clean: 'Not found.',
+                status: 404,
+            }
+        },
     },
 
     datastore: {
@@ -183,6 +207,29 @@ module.exports = {
                         }
                     },
 
+                    bidnum: {
+                        name: {
+                            doc: 'FTA bidder number.',
+                            format: String,
+                            default: 'bidnum'
+                        },
+                        path: {
+                            format: String,
+                            default: 'users/{bidnum}'
+                        }
+                    },
+
+                    bidpw: {
+                        name: {
+                            format: String,
+                            default: 'bidpw'
+                        },
+                        path: {
+                            format: String,
+                            default: 'users/{bidpw}'
+                        }
+                    },
+
                     session: {
                         name: {
                             format: String,
@@ -265,13 +312,29 @@ module.exports = {
                     default: '#password'
                 }
             }
+        },
+
+        cookies: {
+            awsalb: {
+                format: String,
+                default: 'AWSALB'
+            },
+
+            jsessionId: {
+                format: String,
+                default: 'JSESSIONID'
+            },
         }
     },
 
-    urls: {
+    bidApiUrls: {
         login: {
             format: 'url',
             default: 'https://www.bidfta.com/login'
+        },
+        watchlist: {
+            format: 'url',
+            default: 'https://www.bidfta.com/dashboard?source=watchlist'
         },
         deleteItemFromWatchlist: {
             format: 'url',
@@ -281,9 +344,14 @@ module.exports = {
             format: 'url',
             default: 'https://www.bidfta.com/saveItemToWatchlist'
         },
-        watchlist: {
+        placeAjaxBid: {
             format: 'url',
-            default: 'https://www.bidfta.com/dashboard?source=watchlist'
+            default: 'https://www.bidfta.com/bidfta/bidAuctionItems'
+        }
+        ,
+        placeAjaxMaxBid: {
+            format: 'url',
+            default: 'https://www.bidfta.com/placeMaxBidAuctionItems'
         }
     }
 }

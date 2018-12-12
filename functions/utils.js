@@ -28,6 +28,10 @@ exports.tryCatchAsync = async (req, res, next) => {
     }
 }
 
+exports.sendHttpResponse = (res, httpResponse = { status:200, clean:'' }) => {
+    res.status(httpResponse.status).send(httpResponse.clean)
+}
+
 // Express middleware that validates Firebase ID Tokens passed in the Authorization HTTP header.
 // The Firebase ID token needs to be passed as a Bearer token in the Authorization HTTP header like this:
 // `Authorization: Bearer <Firebase ID Token>`.
