@@ -136,6 +136,94 @@ module.exports = {
                         }
                     },
 
+                    title: {
+                        name: {
+                            format: String,
+                            default: 'title'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{title}'
+                        }
+                    },
+
+                    name: {
+                        name: {
+                            format: String,
+                            default: 'name'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{name}'
+                        }
+                    },
+
+                    endDate: {
+                        name: {
+                            format: String,
+                            default: 'endDate'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{endDate}'
+                        }
+                    },
+
+                    removal: {
+                        name: {
+                            format: String,
+                            default: 'removal'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{removal}'
+                        }
+                    },
+
+                    locationAddress: {
+                        name: {
+                            format: String,
+                            default: 'locationAddress'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{locationAddress}'
+                        }
+                    },
+
+                    addDate: {
+                        name: {
+                            format: String,
+                            default: 'addDate'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{addDate}'
+                        }
+                    },
+
+                    sanitized: {
+                        name: {
+                            format: String,
+                            default: 'sanitized'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{sanitized}'
+                        }
+                    },
+
+                    itemsCrawled: {
+                        name: {
+                            format: String,
+                            default: 'itemsCrawled'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{itemsCrawled}'
+                        }
+                    },
+
                     itemList: {
                         name: {
                             format: String,
@@ -143,7 +231,7 @@ module.exports = {
                         },
                         path: {
                             format: String,
-                            default: 'auctions/itemList'
+                            default: 'auctions/{itemList}'
                         }
                     },
                 }
@@ -261,6 +349,14 @@ module.exports = {
                     },
                 }
             }
+        },
+
+        serviceAccount: {
+            doc: 'Contains default creds for bid.',
+            userId: {
+                format: String,
+                default: ''
+            }
         }
     },
 
@@ -311,6 +407,33 @@ module.exports = {
                     format: String,
                     default: '#password'
                 }
+            },
+
+            auction: {
+                title: {
+                    format: String,
+                    default: '#content-holder > div:nth-child(1) > nav > ol > li.breadcrumb-item.active'
+                },
+
+                name: {
+                    format: String,
+                    default: '#content-holder > div.container-fluid.padd-0 > div.detail-box > div.col-lg-9.col-md-8.col-sm-7.right-box > h1:nth-child(2)'
+                },
+
+                endDate: {
+                    format: String,
+                    default: '#content-holder > div.container-fluid.padd-0 > div.detail-box > div.col-lg-3.col-md-4.col-sm-5.col-xs-12.left-box > div > div.relative > aside:nth-child(5) > p:nth-child(3)'
+                },
+
+                locationAddress: {
+                    format: String,
+                    default: '#content-holder > div.container-fluid.padd-0 > div.detail-box > div.col-lg-3.col-md-4.col-sm-5.col-xs-12.left-box > div > div.relative > aside:nth-child(6) > p:nth-child(3)'
+                },
+
+                removal: {
+                    format: String,
+                    default: '#content-holder > div.container-fluid.padd-0 > div.detail-box > div.col-lg-9.col-md-8.col-sm-7.right-box > p:nth-child(10)'
+                },
             }
         },
 
@@ -336,6 +459,20 @@ module.exports = {
             format: 'url',
             default: 'https://www.bidfta.com/dashboard?source=watchlist'
         },
+        auctionDetails: {
+            url: {
+                format: 'url',
+                default: 'https://www.bidfta.com/auctionDetails'
+            },
+            params: {
+                auctionId: {
+                    format: String,
+                    default: 'idauctions'
+                }
+            }
+        },
+
+
         deleteItemFromWatchlist: {
             format: 'url',
             default: 'https://www.bidfta.com/deleteItemFromWatchlist'

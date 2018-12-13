@@ -25,8 +25,42 @@ module.shareable = {
 
 const puppeteer = module.shareable.puppeteer = require('./puppeteering')
 
-exports.test = functions.https.onRequest((req, res) => {
-    res.status(200).send('poop')
+exports.test = functions.https.onRequest(async (req, res) => {
+    // res.send('poop')
+    let ret = {}
+    await db.collection('auctions')
+        // .doc('CMXGGwnx3mqu5jUYvZ5p')
+        .where('auctionNumber', '>', 0)
+        .orderBy('auctionNumber', 'desc')
+        .limit(1)
+        .get()
+        // .then(doc => {
+        //     if (!doc.exists) {
+        //         console.log('No such document!');
+        //     } else {
+        //         console.log('Document data:', doc.data());
+        //         ret = doc.data()
+        //     }
+        // })
+        // .catch(err => {
+        //     console.log('Error getting document', err);
+        // })
+        .then(snap => {
+            if (snap.empty) {
+                console.log('No matching documents.')
+                return
+            }
+
+            snap.forEach(doc => {
+                console.log(doc.id, doc.data())
+                ret[doc.id] = doc.data()
+            })
+        })
+        .catch(err => {
+            console.log('Error getting documents', err);
+        })
+
+    res.json(ret)
 })
 
 const apiApp = express()
@@ -43,7 +77,7 @@ exports.api = functions.https.onRequest(apiApp)
 const puppetApp = express()
 addExpressMiddleware(puppetApp)
 const puppetRouter = express.Router()
-puppetRouter.use('/puppeteering/', puppeteer)
+puppetRouter.use('/', puppeteer)
 puppetApp.use(puppetRouter) // must be after others
 exports.puppeteering = functions.runWith(config.puppeteer.opts).https.onRequest(puppetApp)
 
@@ -92,7 +126,7 @@ exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
     const promises = []
 
     const auctionStart = 6000
-    for (let i = 0, max = 1000; i < max; i++) {
+    for (let i = 0, max = 100; i < max; i++) {
         const promise = new Promise(resolve => {
             cors(req, res, async () => {
                 const auctionNumber = auctionStart + i

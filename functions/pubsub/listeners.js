@@ -1,14 +1,12 @@
-const { config, functions, puppeteer } = module.parent.shareable
+const { config, db, functions, puppeteer } = module.parent.shareable
 const topics = config.pubsub.topics
+const fsAuctionsCollection = config.firestore.collections.auctions
+const fsAuctionFields = fsAuctionsCollection.fields
 
 exports.findNewAuctions = functions.pubsub.topic(topics.findNewAuctions).onPublish(message => {
     console.log('Finding new auctions...')
 
-    // get service account session
-
-    // get auction set = bad numbers + (last good auction number + 1000)
-
-    // add auction info in firestore -> which will kick off getting items
+    db.collections(fsAuctionsCollection.name).orderBy(fsAuctionFields.id.name, 'desc').limit(1)
 })
 
 exports.loginQueue = functions.runWith(config.puppeteer.opts).pubsub.topic(topics.loginqueue).onPublish(message => {

@@ -4,37 +4,32 @@ const waitUntilIdle = { waitUntil: 'networkidle2' }
 
 const { config, db, utils } = module.parent.shareable
 const puppetConfig = config.puppeteer
+const auctionSelectors = puppetConfig.selectors.auction
 const puppetCookies = puppetConfig.cookies
 const jsessionIdName = puppetCookies.jsessionId
 const awsalbName = puppetCookies.awsalb
 
 const { firestore, httpResponses } = config
+const fsAuctionsCollection = firestore.collections.auctions
+const fsAuctionFields = fsAuctionsCollection.fields
 const fsUsersCollection = firestore.collections.users
-const fsUsersCollectionFields = fsUsersCollection.fields
-const sessionVars = fsUsersCollectionFields.session
+const fsUserFields = fsUsersCollection.fields
+const sessionVars = fsUserFields.session
 const fsSession = sessionVars.name
 const sessionFields = sessionVars.fields
 const fsCookie = sessionFields.cookie.name
 const fsCsrf = sessionFields.csrf.name
 const fsExpiration = sessionFields.expiration.name
 
-//    /puppeteering/
+//    /puppeteering/puppeteering/
 const routes = require('express').Router()
-routes.use('/users', verifyUserId)
 
 routes.get('/', (req, res) => { res.send('poop') })
 
-routes.get('/auction/:auctionUrl', crawlAuctionInfo)
+routes.get('/auction/:auctionId', crawlAuctionInfo)
 
-routes.post('/users/session', async (req, res) => {
-    const userSession = await puppetAction(req, res)
-    const error = userSession.error
-    if (error) {
-        res.status(error.status || 500).send(error.clean)
-        return
-    }
-    res.json(userSession.session)
-})
+routes.use('/users', verifyUserId)
+routes.post('/users/session', routeUsersSession)
 
 module.exports = routes
 
@@ -42,34 +37,51 @@ module.exports = routes
 
 const puppetAction = async (req, res, next) => {
     const ret = {}
-    const { userId, bidnum, bidpw } = res.locals
+    const { userId, bidnum, bidpw, session, forceLogin, skipLogin } = res.locals
     // const browser = await puppeteer.launch({ headless: false }) // for testing purposes only
     const browser = await puppeteer.launch()
     console.log('browser launched')
     try {
 
         const page = await browser.newPage()
-        await page.goto(config.bidApiUrls.login, waitUntilIdle)
-        console.log('browser at new fta login screen')
 
-        // login process
-        const loginSelectors = puppetConfig.selectors.login
-        await page.type(loginSelectors.username, bidnum, { delay: 100 })
-        await page.type(loginSelectors.password, bidpw, { delay: 100 })
-        await Promise.all([
-            page.keyboard.press('Enter'),
-            page.waitForNavigation(waitUntilIdle),
-        ])
+        if (!skipLogin) {
+            if (forceLogin || !isValidSession(session)) {
+                await page.goto(config.bidApiUrls.login, waitUntilIdle)
+                console.log('browser at new fta login screen')
 
-        const pageUrl = page.url()
-        const error = Object.entries(httpResponses).find((key, val) => pageUrl.indexOf(val.dirty) > -1)
-        if (error) {
-            ret.error = error
-            return ret
+                const loginSelectors = puppetConfig.selectors.login
+                await page.type(loginSelectors.username, bidnum, { delay: 100 })
+                await page.type(loginSelectors.password, bidpw, { delay: 100 })
+                await Promise.all([
+                    page.keyboard.press('Enter'),
+                    page.waitForNavigation(waitUntilIdle),
+                ])
+
+                const pageUrl = page.url()
+                const error = Object.entries(httpResponses).find((key, val) => pageUrl.indexOf(val.dirty) > -1)
+                if (error) {
+                    ret.error = error
+                    return ret
+                }
+
+                console.log('browser logged in')
+                ret.session = await updateUserSession(page, userId)
+            } else {
+                await page.setCookie(
+                    {
+                        name: fsCookie,
+                        value: session[fsCookie],
+                        domain: 'www.bidfta.com'
+                    },
+                    {
+                        name: fsCsrf,
+                        value: session[fsCsrf],
+                        domain: 'www.bidfta.com'
+                    }
+                )
+            }
         }
-
-        console.log('browser logged in')
-        ret.session = await updateUserSession(page, userId)
 
         if (next) await next(page)
 
@@ -91,7 +103,7 @@ const puppetAction = async (req, res, next) => {
 }
 
 async function verifyUserId(req, res, next) {
-    const userId = req.body.userId
+    const userId = req.body.userId || res.locals.userId
     if (!userId) {
         utils.sendHttpResponse(res, httpResponses.noUserId)
         return
@@ -105,30 +117,73 @@ async function verifyUserId(req, res, next) {
     }
 
     res.locals.userId = userId
-    res.locals.bidnum = user[fsUsersCollectionFields.bidnum.name]
-    res.locals.bidpw = user[fsUsersCollectionFields.bidpw.name]
-    next()
+    res.locals.bidnum = user[fsUserFields.bidnum.name]
+    res.locals.bidpw = user[fsUserFields.bidpw.name]
+    res.locals.session = user[fsUserFields.session.name]
+    if (next) next()
+}
+
+async function routeUsersSession(req, res) {
+    res.locals.forceLogin = true
+    const userSession = await puppetAction(req, res)
+    const error = userSession.error
+    if (error) {
+        res.status(error.status || 500).send(error.clean)
+        return
+    }
+    res.json(userSession.session)
 }
 
 async function crawlAuctionInfo(req, res) {
-    const auctionUrl = req.params.auctionUrl
-    if (!auctionUrl) {
-        res.status(400).send('No url.')
+    const auctionId = req.params.auctionId
+    if (!auctionId) {
+        utils.sendHttpResponse(res, httpResponses.missingInformation)
+        return
     }
 
-    const browser = await puppeteer.launch()
-    try {
-        console.log('puppeteer getting auction.js items from', auctionUrl)
-    } catch (e) {
-        res.status(500).send('' + e)
-    } finally {
-        await browser.close()
-    }
+    res.locals.userId = firestore.serviceAccount.userId
+    res.locals.skipLogin = true
+    await verifyUserId(req, res)
+
+    const info = {}
+    const actionResp = await puppetAction(req, res, async page => {
+        const auctionDetailsConfig = config.bidApiUrls.auctionDetails
+        const auctionUrl = `${auctionDetailsConfig.url}?${auctionDetailsConfig.params.auctionId}=${auctionId}`
+        await page.goto(auctionUrl, waitUntilIdle)
+        console.log('browser at auction page', auctionUrl)
+
+        const promises = []
+        Object.entries(auctionSelectors).forEach(([key, val]) => {
+            const promise = new Promise(async resolve => {
+                let ret = ''
+                try {
+                    ret = await page.$eval(val, el => el.textContent)
+                } catch(e) {}
+                info[key] = ret
+                resolve()
+            })
+            promises.push(promise)
+        })
+        await Promise.all(promises)
+
+    })
+
+    // sanitize
+    const name = info.name || ''
+    info.name = name.substring(name.indexOf(' ') + 1)
+
+    const endDate = info.endDate.replace(',', '').replace('th', '').replace('nd', '').replace('1st', '1').split(' ')
+    endDate[0] = endDate[0].substring(0,3)
+    info.endDate = new Date(endDate.join(' '))
+
+    const removal = info.removal.replace('  ', ' ')
+    info.removal = removal.substring(removal.indexOf(' ') + 1, removal.indexOf('Pickup')).trim()
+
+    res.json(actionResp.error || info)
 }
 
-async function crawlWatchlist(userId) {
-    const { userId, bidnum, bidpw } = res.locals
-    const error = await puppetAction(bidnum, bidpw, async (page) => {
+async function crawlWatchlist(req, res) {
+    const error = await puppetAction(req, res, async (page) => {
 
     })
 
@@ -142,6 +197,7 @@ async function updateUserSession(page, userId) {
     const session = {}
 
     const cookies = await page.cookies()
+    console.log(cookies)
     const jsessionId = findCookieByName(cookies, jsessionIdName)
     const awsalb = findCookieByName(cookies, awsalbName)
     session[fsCookie] = `${jsessionIdName}=${jsessionId};${awsalbName}=${awsalb}`
@@ -164,4 +220,8 @@ async function updateUserSession(page, userId) {
 
 function findCookieByName(cookies, name) {
     return cookies.find(c => c.name === name).value
+}
+
+function isValidSession(session) {
+    return session && session[fsCookie] && session[fsCsrf] && session[fsExpiration] && session[fsExpiration] > Date.now()
 }
