@@ -25,24 +25,6 @@ function findCookieByName(cookies, name) {
     return cookies.find(c => c.name === name).value
 }
 
-function isValidSession(session) {
-    return session && session[fsCookie] && session[fsCsrf] && session[fsExpiration] && session[fsExpiration] > Date.now()
-}
-
-async function getFsUserSession(db, userId) {
-    const user = await utils.fsGetObjectById(db, fsUsersCollection.name, userId)
-    if (!user) {
-        return
-    }
-
-    return {
-        userId: userId,
-        bidnum: user[fsUserFields.bidnum.name],
-        bidpw: user[fsUserFields.bidpw.name],
-        session: user[fsUserFields.session.name]
-    }
-}
-
 async function updateUserSession(db, page, userId) {
     const session = {}
 
@@ -57,7 +39,7 @@ async function updateUserSession(db, page, userId) {
     await doc.set({
         [fsSession]: {
             ...session,
-            [fsExpiration]: Date.now() + 82800000
+            [fsExpiration]: new Date(Date.now() + 82800000)
         }
     }, {merge: true})
     console.log('set bidfta creds for user', userId)
@@ -66,7 +48,7 @@ async function updateUserSession(db, page, userId) {
 }
 
 // opts: userId, bidnum, bidpw, session, forceLogin, skipLogin, db
-async function puppetAction(opts, next) {
+exports.puppetAction = async (opts, next) => {
     const ret = {}
     const { userId, bidnum, bidpw, session, forceLogin, skipLogin, db } = opts
     // const browser = await puppeteer.launch({ headless: false }) // for testing purposes only
@@ -77,7 +59,7 @@ async function puppetAction(opts, next) {
         const page = await browser.newPage()
 
         if (!skipLogin) {
-            if (forceLogin || !isValidSession(session)) {
+            if (forceLogin || !utils.isValidSession(session)) {
                 await page.goto(config.bidApiUrls.login, waitUntilIdle)
                 console.log('browser at new fta login screen')
 
@@ -99,18 +81,20 @@ async function puppetAction(opts, next) {
                 console.log('browser logged in')
                 ret.session = await updateUserSession(db, page, userId)
             } else {
-                await page.setCookie(
-                    {
-                        name: fsCookie,
-                        value: session[fsCookie],
-                        domain: 'www.bidfta.com'
-                    },
-                    {
-                        name: fsCsrf,
-                        value: session[fsCsrf],
-                        domain: 'www.bidfta.com'
-                    }
-                )
+                const cookie = {
+                    name: fsCookie,
+                    value: session[fsCookie],
+                    domain: 'www.bidfta.com'
+                }
+                const csrf = {
+                    name: fsCsrf,
+                    value: session[fsCsrf],
+                    domain: 'www.bidfta.com'
+                }
+
+                console.log('cookie:', cookie)
+                console.log('csrf:', csrf)
+                // await page.setCookie(cookie, csrf)
             }
         }
 
@@ -133,9 +117,9 @@ async function puppetAction(opts, next) {
     }
 }
 
-async function crawlAuctionInfo(auctionId, opts) {
+exports.crawlAuctionInfo = async (auctionId, opts) => {
     const info = {}
-    const actionResp = await puppetAction(opts, async page => {
+    const actionResp = await this.puppetAction(opts, async page => {
         const auctionDetailsConfig = config.bidApiUrls.auctionDetails
         const auctionUrl = `${auctionDetailsConfig.url}?${auctionDetailsConfig.params.auctionId}=${auctionId}`
         await page.goto(auctionUrl, waitUntilIdle)
@@ -154,7 +138,7 @@ async function crawlAuctionInfo(auctionId, opts) {
         await Promise.all(promises)
     })
 
-    if (!info.name) return actionResp.error
+    if (!info.name) return actionResp
 
     // sanitize
     const name = info.name
@@ -165,14 +149,10 @@ async function crawlAuctionInfo(auctionId, opts) {
     info.endDate = new Date(endDate.join(' '))
 
     const removal = info.removal.replace('  ', ' ')
-    info.removal = removal.substring(removal.indexOf(' ') + 1, removal.indexOf('Pickup')).trim()
+    const pickupIdx = removal.toLowerCase().indexOf('pickup')
+    const withIdx = removal.toLowerCase().indexOf('with')
+    const endIdx = pickupIdx > -1 ? pickupIdx : withIdx
+    info.removal = removal.substring(removal.indexOf(' ') + 1, endIdx).trim()
 
     return info
-}
-
-module.exports = {
-    crawlAuctionInfo: crawlAuctionInfo,
-    getFsUserSession: getFsUserSession,
-    isValidSession: isValidSession,
-    puppetAction: puppetAction,
 }

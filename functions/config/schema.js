@@ -367,49 +367,36 @@ module.exports = {
                     default: 'info'
                 },
 
-                docs: {
-                    badAuctionNumbers: {
+                fields: {
+                    type: {
                         name: {
                             format: String,
-                            default: 'badAuctionNumbers'
+                            default: 'type'
                         },
-
-                        fields: {
-                            nums: {
-                                name: {
-                                    format: String,
-                                    default: 'num'
-                                },
-
-                                path: {
-                                    format: String,
-                                    default: '/info/badAuctionNumbers/{nums}'
-                                }
-                            }
+                        path: {
+                            format: String,
+                            default: 'info/{type}'
                         }
                     },
 
-                    goodAuctionNumbers: {
+                    value: {
                         name: {
                             format: String,
-                            default: 'goodAuctionNumbers'
+                            default: 'value'
                         },
-
-                        fields: {
-                            nums: {
-                                name: {
-                                    format: String,
-                                    default: 'num'
-                                },
-
-                                path: {
-                                    format: String,
-                                    default: '/info/goodAuctionNumbers/{nums}'
-                                }
-                            }
+                        path: {
+                            format: String,
+                            default: 'info/{value}'
                         }
-                    }
+                    },
                 },
+
+                types: {
+                    badAuctionNum: {
+                        format: String,
+                        default: 'BAD_AUCTION_NUM'
+                    }
+                }
             }
         },
 
@@ -425,7 +412,7 @@ module.exports = {
     pubsub: {
         findAuctionsAmount: {
             format: Number,
-            default: 5
+            default: 100
         },
 
         topics: {

@@ -23,7 +23,7 @@ async function verifyUserId(req, res, next) {
         return
     }
 
-    const userSession = await puppetFuncs.getFsUserSession(db, userId)
+    const userSession = await utils.getFsUserSession(db, userId)
     if (!userSession) {
         console.error('user not found for id', id)
         utils.sendHttpResponse(res, httpResponses.notFound)

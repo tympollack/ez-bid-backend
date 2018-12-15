@@ -1,6 +1,7 @@
-const config = require('./config/config').get()
+const vars = require('./vars')
 const cloudTasks = require('@google-cloud/tasks')
 
+// @deprecated
 exports.fsGetObjectById = (db, collection, id) => {
     return new Promise(async resolve => {
         const doc = await db.collection(collection).doc(id).get()
@@ -8,6 +9,7 @@ exports.fsGetObjectById = (db, collection, id) => {
     })
 }
 
+// @deprecated
 exports.fsGetDocById = (db, collection, id) => {
     return new Promise(async resolve => {
         resolve(await db.collection(collection).doc(id))
@@ -30,6 +32,29 @@ exports.tryCatchAsync = async (req, res, next) => {
 
 exports.sendHttpResponse = (res, httpResponse = { status:200, clean:'' }) => {
     res.status(httpResponse.status).send(httpResponse.clean)
+}
+
+exports.isValidSession = session => {
+    return session
+        && session[vars.FS_SESSION_COOKIE_NAME]
+        && session[vars.FS_SESSION_CSRF_NAME]
+        && session[vars.FS_SESSION_EXPIRATION_NAME]
+        && session[vars.FS_SESSION_EXPIRATION_NAME]._seconds * 1000 > new Date()
+}
+
+// @deprecated
+exports.getFsUserSession = async (db, userId) => {
+    const user = await this.fsGetObjectById(db, vars.FS_COLLECTIONS_USERS.name, userId)
+    if (!user) {
+        return
+    }
+
+    return {
+        userId: userId,
+        bidnum: user[vars.FS_USER_BIDNUM_NAME],
+        bidpw: user[vars.FS_USER_BIDPW_NAME],
+        session: user[vars.FS_USER_SESSION_NAME]
+    }
 }
 
 // Express middleware that validates Firebase ID Tokens passed in the Authorization HTTP header.
@@ -77,8 +102,7 @@ exports.validateFirebaseIdToken = async (req, res, next) => {
 
 exports.createTask = async (queue, payload) => {
     const client = new cloudTasks.CloudTasksClient()
-    const { projectId, cloudResourceLocation } = config.firebase
-    const parent = client.queuePath(projectId, cloudResourceLocation, queue)
+    const parent = client.queuePath(vars.FB_PROJECTID, vars.FB_CLOUD_RESOURCE_LOCATION, queue)
     const options = { payload: payload }
 
     const task = {

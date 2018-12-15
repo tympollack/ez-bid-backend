@@ -7,11 +7,11 @@ const functions = require('firebase-functions')
 require('firebase')
 require('firebase/firestore')
 
+const fsFuncs = require('./firestore/fsFuncs')
 const utils = require('./utils')
+const vars = require('./vars')
 
-admin.initializeApp(functions.config().firebase)
-const db = admin.firestore()
-db.settings({ timestampsInSnapshots: true })
+const db = require('./firestore/init')
 
 module.shareable = {
     admin: admin,
@@ -20,7 +20,8 @@ module.shareable = {
     db: db,
     functions: functions,
     url: config.url.base + config.url.apiPath,
-    utils: utils
+    utils: utils,
+    vars: vars
 }
 
 const puppeteer = module.shareable.puppeteer = require('./puppeteering/puppeteering')
@@ -28,116 +29,61 @@ const puppeteer = module.shareable.puppeteer = require('./puppeteering/puppeteer
 exports.test = functions.https.onRequest(async (req, res) => {
     // res.send('poop')
 
-    const { findAuctionsAmount, topics } = config.pubsub
-    const fsCollections = config.firestore.collections
-    const fsInfoCollection = fsCollections.info
-    const fsAuctionsCollection = fsCollections.auctions
-    const fsAuctionFields = fsAuctionsCollection.fields
-    const auctionDetailsConfig = config.bidApiUrls.auctionDetails
-    const goodNums = fsInfoCollection.docs.goodAuctionNumbers.fields.nums.name
-    const badNums = fsInfoCollection.docs.badAuctionNumbers.fields.nums.name
     const puppetFuncs = require('./puppeteering/puppetFuncs')
 
     console.log('Finding new auctions...')
 
-    // get highest auction number
-    let auctionStart = 0
-    const snap = await db.collection(fsAuctionsCollection.name)
-        .orderBy(fsAuctionFields.auctionNumber.name, 'desc')
-        .limit(1)
-        .get()
-
-    snap.forEach(doc => {
-        auctionStart = doc.data().auctionNumber || 0
-    })
-
     // get session info
-    let opts = await puppetFuncs.getFsUserSession(db, config.firestore.serviceAccount.userId)
-    if (!opts) return
+    console.log('getting user session from firestore')
+    let opts = await await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
+    if (!opts) {
+        console.log('failed getting user session')
+        res.json(opts)
+        return
+    }
 
     opts.db = db
-    if (!puppetFuncs.isValidSession(opts.session)) {
+    opts.skipLogin = true
+    if (!utils.isValidSession(opts.session)) {
+        console.log('invalid session, renewing session')
         await puppetFuncs.puppetAction(opts)
-        Object.assign(opts, await puppetFuncs.getFsUserSession(db, config.firestore.serviceAccount.userId))
+        Object.assign(opts, await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID))
     }
 
-    // call out to find valid auctions
-    const baseUrl = `${auctionDetailsConfig.url}?${auctionDetailsConfig.params.auctionId}=`
-    const params = {
-        method: 'POST',
-        mode: 'no-cors',
-        cache: 'no-cache',
-        credentials: 'same-origin',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'cookie': opts.cookie,
-            'x-csrf-token': opts.csrf
-        },
-        redirect: 'follow',
-    }
+    console.log('preparing crawl for auctions')
+    const highestGoodAuction = await fsFuncs.findHighestGoodAuction()
+    const highestGoodAuctionNum = highestGoodAuction[vars.FS_AUCTION_AUCTION_NUMBER_NAME]
+    const badAuctionNums = await fsFuncs.getUnusedAuctionNumbers()
+    const highestBadAuctionNum = badAuctionNums.sort((a, b) => { return b - a })[0]
+    const isHighestBadNumberTooHigh = highestBadAuctionNum > highestGoodAuctionNum + vars.PS_FIND_AUCTIONS_AMOUNT
+    const isHighestGoodAuctionTooOld = highestGoodAuction[vars.FS_AUCTION_END_DATE]._seconds * 1000 < new Date()
+    const startNum = (isHighestBadNumberTooHigh > isHighestGoodAuctionTooOld) ? highestBadAuctionNum : highestGoodAuctionNum
 
-    const oops = 'Oops Something went wrong.'
-    const goodNumbers = []
-    const badNumbers = []
+    let auctionInfo
+    for (let i = 1, len = vars.PS_FIND_AUCTIONS_AMOUNT; i <= len; i++) {
+        const num = startNum + i
+        auctionInfo = await puppetFuncs.crawlAuctionInfo(num, opts)
 
-    const promises = []
-    for (let i = 0, max = findAuctionsAmount; i < max; i++) {
-        const promise = new Promise(async resolve => {
-            // cors({}, {}, async () => {
-                const auctionNumber = auctionStart + i
-                const url = baseUrl + auctionNumber
-                console.log('Calling auction', auctionNumber)
-                await fetch(url, params)
-                    .then(response => response.text().then(r => {
-                        if (r.indexOf(oops) > -1) badNumbers.push(auctionNumber)
-                        else goodNumbers.push(auctionNumber)
-                    }))
-                    .catch(error => {
-                        console.log(error)
-                    })
-                resolve()
-            // })
-        })
-        promises.push(promise)
-    }
-    await Promise.all(promises)
-
-    // save
-    const goodSaveDoc = db.collection(fsInfoCollection.name).doc(fsInfoCollection.docs.goodAuctionNumbers.name)
-    const badSaveDoc = db.collection(fsInfoCollection.name).doc(fsInfoCollection.docs.badAuctionNumbers.name)
-    goodSaveDoc.set({ [goodNums]: (goodSaveDoc.get()[goodNumbers] || []).concat(goodNumbers).sort() })
-    badSaveDoc.set({ [badNums]: (badSaveDoc.get()[badNumbers] || []).concat(badNumbers).sort() })
-
-    // crawl auctions
-    const now = new Date()
-    for (let i = 0, len = goodNumbers.length; i < len; i++) {
-        const num = goodNumbers[i]
-        const auctionInfo = await puppetFuncs.crawlAuctionInfo(num, opts)
-        if (!auctionInfo.hasOwnProperty('name')) {
-            console.log('Unable to crawl auction at this time.', num)
-            return
+        if (auctionInfo.error) {
+            console.log('Unable to crawl auction at this time.', num, auctionInfo.error)
+        } else if (!auctionInfo.name) {
+            console.log('bad auction num', num)
+            if (badAuctionNums.indexOf(num) === -1) {
+                fsFuncs.addUnusedAuctionNumber(num)
+                badAuctionNums.push(num)
+            }
+        } else {
+            auctionInfo[vars.FS_AUCTION_ADD_DATE_NAME] = new Date()
+            auctionInfo[vars.FS_AUCTION_AUCTION_NUMBER_NAME] = num
+            auctionInfo[vars.FS_AUCTION_ITEM_LIST_NAME] = []
+            auctionInfo[vars.FS_AUCTION_ITEMS_CRAWLED_NAME] = false
+            auctionInfo[vars.FS_AUCTION_SANITIZED_NAME] = false
+            fsFuncs.addNewAuction(auctionInfo)
+            console.log('auctionInfo set for', num)
         }
-        auctionInfo[fsAuctionFields.addDate] = now
-        auctionInfo[fsAuctionFields.auctionNumber] = num
-        auctionInfo[fsAuctionFields.itemList] = []
-        auctionInfo[fsAuctionFields.itemsCrawled] = false
-        auctionInfo[fsAuctionFields.sanitized] = false
-        await db.collection(fsAuctionsCollection.name).doc(num).set(auctionInfo)
     }
-    // goodNumbers.forEach(async num => {
-    //     const auctionInfo = await puppetFuncs.crawlAuctionInfo(num, opts)
-    //     if (!auctionInfo.hasOwnProperty('name')) {
-    //         console.log('Unable to crawl auction at this time.', num)
-    //         return
-    //     }
-    //     auctionInfo[fsAuctionFields.addDate] = now
-    //     auctionInfo[fsAuctionFields.auctionNumber] = num
-    //     auctionInfo[fsAuctionFields.itemList] = []
-    //     auctionInfo[fsAuctionFields.itemsCrawled] = false
-    //     auctionInfo[fsAuctionFields.sanitized] = false
-    //     await db.collection(fsAuctionsCollection.name).doc(num).set(auctionInfo)
-    // })
+
+    res.json(auctionInfo)
 })
 
 const apiApp = express()
