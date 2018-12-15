@@ -136,6 +136,17 @@ module.exports = {
                         }
                     },
 
+                    auctionNumber: {
+                        name: {
+                            format: String,
+                            default: 'auctionNumber'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{auctionNumber}'
+                        }
+                    },
+
                     title: {
                         name: {
                             format: String,
@@ -348,6 +359,57 @@ module.exports = {
                         }
                     },
                 }
+            },
+
+            info: {
+                name: {
+                    format: String,
+                    default: 'info'
+                },
+
+                docs: {
+                    badAuctionNumbers: {
+                        name: {
+                            format: String,
+                            default: 'badAuctionNumbers'
+                        },
+
+                        fields: {
+                            nums: {
+                                name: {
+                                    format: String,
+                                    default: 'num'
+                                },
+
+                                path: {
+                                    format: String,
+                                    default: '/info/badAuctionNumbers/{nums}'
+                                }
+                            }
+                        }
+                    },
+
+                    goodAuctionNumbers: {
+                        name: {
+                            format: String,
+                            default: 'goodAuctionNumbers'
+                        },
+
+                        fields: {
+                            nums: {
+                                name: {
+                                    format: String,
+                                    default: 'num'
+                                },
+
+                                path: {
+                                    format: String,
+                                    default: '/info/goodAuctionNumbers/{nums}'
+                                }
+                            }
+                        }
+                    }
+                },
             }
         },
 
@@ -361,6 +423,11 @@ module.exports = {
     },
 
     pubsub: {
+        findAuctionsAmount: {
+            format: Number,
+            default: 5
+        },
+
         topics: {
             findNewAuctions: {
                 doc: 'Topic added to by cron -> app engine.',

@@ -23,44 +23,121 @@ module.shareable = {
     utils: utils
 }
 
-const puppeteer = module.shareable.puppeteer = require('./puppeteering')
+const puppeteer = module.shareable.puppeteer = require('./puppeteering/puppeteering')
 
 exports.test = functions.https.onRequest(async (req, res) => {
     // res.send('poop')
-    let ret = {}
-    await db.collection('auctions')
-        // .doc('CMXGGwnx3mqu5jUYvZ5p')
-        .where('auctionNumber', '>', 0)
-        .orderBy('auctionNumber', 'desc')
+
+    const { findAuctionsAmount, topics } = config.pubsub
+    const fsCollections = config.firestore.collections
+    const fsInfoCollection = fsCollections.info
+    const fsAuctionsCollection = fsCollections.auctions
+    const fsAuctionFields = fsAuctionsCollection.fields
+    const auctionDetailsConfig = config.bidApiUrls.auctionDetails
+    const goodNums = fsInfoCollection.docs.goodAuctionNumbers.fields.nums.name
+    const badNums = fsInfoCollection.docs.badAuctionNumbers.fields.nums.name
+    const puppetFuncs = require('./puppeteering/puppetFuncs')
+
+    console.log('Finding new auctions...')
+
+    // get highest auction number
+    let auctionStart = 0
+    const snap = await db.collection(fsAuctionsCollection.name)
+        .orderBy(fsAuctionFields.auctionNumber.name, 'desc')
         .limit(1)
         .get()
-        // .then(doc => {
-        //     if (!doc.exists) {
-        //         console.log('No such document!');
-        //     } else {
-        //         console.log('Document data:', doc.data());
-        //         ret = doc.data()
-        //     }
-        // })
-        // .catch(err => {
-        //     console.log('Error getting document', err);
-        // })
-        .then(snap => {
-            if (snap.empty) {
-                console.log('No matching documents.')
-                return
-            }
 
-            snap.forEach(doc => {
-                console.log(doc.id, doc.data())
-                ret[doc.id] = doc.data()
-            })
-        })
-        .catch(err => {
-            console.log('Error getting documents', err);
-        })
+    snap.forEach(doc => {
+        auctionStart = doc.data().auctionNumber || 0
+    })
 
-    res.json(ret)
+    // get session info
+    let opts = await puppetFuncs.getFsUserSession(db, config.firestore.serviceAccount.userId)
+    if (!opts) return
+
+    opts.db = db
+    if (!puppetFuncs.isValidSession(opts.session)) {
+        await puppetFuncs.puppetAction(opts)
+        Object.assign(opts, await puppetFuncs.getFsUserSession(db, config.firestore.serviceAccount.userId))
+    }
+
+    // call out to find valid auctions
+    const baseUrl = `${auctionDetailsConfig.url}?${auctionDetailsConfig.params.auctionId}=`
+    const params = {
+        method: 'POST',
+        mode: 'no-cors',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'cookie': opts.cookie,
+            'x-csrf-token': opts.csrf
+        },
+        redirect: 'follow',
+    }
+
+    const oops = 'Oops Something went wrong.'
+    const goodNumbers = []
+    const badNumbers = []
+
+    const promises = []
+    for (let i = 0, max = findAuctionsAmount; i < max; i++) {
+        const promise = new Promise(async resolve => {
+            // cors({}, {}, async () => {
+                const auctionNumber = auctionStart + i
+                const url = baseUrl + auctionNumber
+                console.log('Calling auction', auctionNumber)
+                await fetch(url, params)
+                    .then(response => response.text().then(r => {
+                        if (r.indexOf(oops) > -1) badNumbers.push(auctionNumber)
+                        else goodNumbers.push(auctionNumber)
+                    }))
+                    .catch(error => {
+                        console.log(error)
+                    })
+                resolve()
+            // })
+        })
+        promises.push(promise)
+    }
+    await Promise.all(promises)
+
+    // save
+    const goodSaveDoc = db.collection(fsInfoCollection.name).doc(fsInfoCollection.docs.goodAuctionNumbers.name)
+    const badSaveDoc = db.collection(fsInfoCollection.name).doc(fsInfoCollection.docs.badAuctionNumbers.name)
+    goodSaveDoc.set({ [goodNums]: (goodSaveDoc.get()[goodNumbers] || []).concat(goodNumbers).sort() })
+    badSaveDoc.set({ [badNums]: (badSaveDoc.get()[badNumbers] || []).concat(badNumbers).sort() })
+
+    // crawl auctions
+    const now = new Date()
+    for (let i = 0, len = goodNumbers.length; i < len; i++) {
+        const num = goodNumbers[i]
+        const auctionInfo = await puppetFuncs.crawlAuctionInfo(num, opts)
+        if (!auctionInfo.hasOwnProperty('name')) {
+            console.log('Unable to crawl auction at this time.', num)
+            return
+        }
+        auctionInfo[fsAuctionFields.addDate] = now
+        auctionInfo[fsAuctionFields.auctionNumber] = num
+        auctionInfo[fsAuctionFields.itemList] = []
+        auctionInfo[fsAuctionFields.itemsCrawled] = false
+        auctionInfo[fsAuctionFields.sanitized] = false
+        await db.collection(fsAuctionsCollection.name).doc(num).set(auctionInfo)
+    }
+    // goodNumbers.forEach(async num => {
+    //     const auctionInfo = await puppetFuncs.crawlAuctionInfo(num, opts)
+    //     if (!auctionInfo.hasOwnProperty('name')) {
+    //         console.log('Unable to crawl auction at this time.', num)
+    //         return
+    //     }
+    //     auctionInfo[fsAuctionFields.addDate] = now
+    //     auctionInfo[fsAuctionFields.auctionNumber] = num
+    //     auctionInfo[fsAuctionFields.itemList] = []
+    //     auctionInfo[fsAuctionFields.itemsCrawled] = false
+    //     auctionInfo[fsAuctionFields.sanitized] = false
+    //     await db.collection(fsAuctionsCollection.name).doc(num).set(auctionInfo)
+    // })
 })
 
 const apiApp = express()
