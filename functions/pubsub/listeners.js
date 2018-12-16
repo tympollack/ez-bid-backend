@@ -54,8 +54,6 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
             console.log('auctionInfo set for', num)
         }
     }
-
-    res.json(auctionInfo)
 })
 
 exports.loginQueue = functions.runWith(config.puppeteer.opts).pubsub.topic(vars.PS_TOPICS.loginqueue).onPublish(message => {

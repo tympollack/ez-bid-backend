@@ -52,7 +52,7 @@ exports.puppetAction = async (opts, next) => {
     const ret = {}
     const { userId, bidnum, bidpw, session, forceLogin, skipLogin, db } = opts
     // const browser = await puppeteer.launch({ headless: false }) // for testing purposes only
-    const browser = await puppeteer.launch()
+    const browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']})
     console.log('browser launched')
     try {
 

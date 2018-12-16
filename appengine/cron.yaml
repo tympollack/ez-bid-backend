@@ -1,4 +1,4 @@
 cron:
 - description: Find any auctions created since the last run.
-  url: /pubsub/find-new-auctions
-  schedule: every 1 minutes
+  url: /publish/find-new-auctions
+  schedule: every 3 minutes

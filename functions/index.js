@@ -7,7 +7,6 @@ const functions = require('firebase-functions')
 require('firebase')
 require('firebase/firestore')
 
-const fsFuncs = require('./firestore/fsFuncs')
 const utils = require('./utils')
 const vars = require('./vars')
 

@@ -56,7 +56,7 @@ exports.getUnusedAuctionNumbers = async () => {
 }
 
 exports.addUnusedAuctionNumber = async num => {
-    db.collection(vars.FS_COLLECTIONS_INFO.name).set({
+    db.collection(vars.FS_COLLECTIONS_INFO.name).add({
         [vars.FS_INFO_TYPE_NAME]: vars.FS_INFO_TYPES.badAuctionNum,
         [vars.FS_INFO_VALUE_NAME]: num
     })
