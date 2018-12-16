@@ -29,7 +29,7 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
     const highestBadAuctionNum = badAuctionNums.sort((a, b) => { return b - a })[0]
     const isHighestBadNumberTooHigh = highestBadAuctionNum > highestGoodAuctionNum + vars.PS_FIND_AUCTIONS_AMOUNT
     const isHighestGoodAuctionTooOld = highestGoodAuction[vars.FS_AUCTION_END_DATE]._seconds * 1000 < new Date()
-    const startNum = (isHighestBadNumberTooHigh > isHighestGoodAuctionTooOld) ? highestBadAuctionNum : highestGoodAuctionNum
+    const startNum = (isHighestBadNumberTooHigh && isHighestGoodAuctionTooOld) ? highestBadAuctionNum : highestGoodAuctionNum
 
     let auctionInfo
     for (let i = 1, len = vars.PS_FIND_AUCTIONS_AMOUNT; i <= len; i++) {
