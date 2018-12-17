@@ -31,24 +31,29 @@ exports.FS_FIELDS_INFO = this.FS_COLLECTIONS_INFO.fields
 exports.FS_FIELDS_USER = this.FS_COLLECTIONS_USERS.fields
 exports.FS_FIELDS_USER_SESSION = this.FS_FIELDS_USER.session.fields
 
-exports.FS_AUCTION_ADD_DATE_NAME = this.FS_FIELDS_AUCTION.addDate.name
-exports.FS_AUCTION_AUCTION_NUMBER_NAME = this.FS_FIELDS_AUCTION.auctionNumber.name
+exports.FS_AUCTION_ADD_DATE = this.FS_FIELDS_AUCTION.addDate.name
+exports.FS_AUCTION_AUCTION_NUMBER = this.FS_FIELDS_AUCTION.auctionNumber.name
 exports.FS_AUCTION_END_DATE = this.FS_FIELDS_AUCTION.endDate.name
-exports.FS_AUCTION_ITEM_LIST_NAME = this.FS_FIELDS_AUCTION.itemList.name
-exports.FS_AUCTION_ITEMS_CRAWLED_NAME = this.FS_FIELDS_AUCTION.itemsCrawled.name
-exports.FS_AUCTION_SANITIZED_NAME = this.FS_FIELDS_AUCTION.sanitized.name
+exports.FS_AUCTION_ITEM_LIST = this.FS_FIELDS_AUCTION.itemList.name
+exports.FS_AUCTION_ITEMS_CRAWLED = this.FS_FIELDS_AUCTION.itemsCrawled.name
+exports.FS_AUCTION_LOCATION_ADDRESS = this.FS_FIELDS_AUCTION.locationAddress.name
+exports.FS_AUCTION_NAME = this.FS_FIELDS_AUCTION.name.name
+exports.FS_AUCTION_NUM_ITEMS = this.FS_FIELDS_AUCTION.numItems.name
+exports.FS_AUCTION_REMOVAL = this.FS_FIELDS_AUCTION.removal.name
+exports.FS_AUCTION_SANITIZED = this.FS_FIELDS_AUCTION.sanitized.name
+exports.FS_AUCTION_TITLE = this.FS_FIELDS_AUCTION.title.name
 
-exports.FS_INFO_TYPE_NAME = this.FS_FIELDS_INFO.type.name
-exports.FS_INFO_VALUE_NAME = this.FS_FIELDS_INFO.value.name
+exports.FS_INFO_TYPE = this.FS_FIELDS_INFO.type.name
+exports.FS_INFO_VALUE = this.FS_FIELDS_INFO.value.name
 exports.FS_INFO_TYPES = this.FS_COLLECTIONS_INFO.types
 
-exports.FS_USER_BIDNUM_NAME = this.FS_FIELDS_USER.bidnum.name
-exports.FS_USER_BIDPW_NAME = this.FS_FIELDS_USER.bidpw.name
-exports.FS_USER_SESSION_NAME = this.FS_FIELDS_USER.session.name
+exports.FS_USER_BIDNUM = this.FS_FIELDS_USER.bidnum.name
+exports.FS_USER_BIDPW = this.FS_FIELDS_USER.bidpw.name
+exports.FS_USER_SESSION = this.FS_FIELDS_USER.session.name
 
-exports.FS_SESSION_COOKIE_NAME = this.FS_FIELDS_USER_SESSION.cookie.name
-exports.FS_SESSION_CSRF_NAME = this.FS_FIELDS_USER_SESSION.csrf.name
-exports.FS_SESSION_EXPIRATION_NAME = this.FS_FIELDS_USER_SESSION.expiration.name
+exports.FS_SESSION_COOKIE = this.FS_FIELDS_USER_SESSION.cookie.name
+exports.FS_SESSION_CSRF = this.FS_FIELDS_USER_SESSION.csrf.name
+exports.FS_SESSION_EXPIRATION = this.FS_FIELDS_USER_SESSION.expiration.name
 
 /////////////////////////////////////////////////////////////////////
 

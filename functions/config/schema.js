@@ -125,84 +125,8 @@ module.exports = {
                 },
 
                 fields: {
-                    id: {
-                        name: {
-                            format: String,
-                            default: 'auctionId'
-                        },
-                        path: {
-                            format: String,
-                            default: 'auctions/{auctionId}'
-                        }
-                    },
-
-                    auctionNumber: {
-                        name: {
-                            format: String,
-                            default: 'auctionNumber'
-                        },
-                        path: {
-                            format: String,
-                            default: 'auctions/{auctionNumber}'
-                        }
-                    },
-
-                    title: {
-                        name: {
-                            format: String,
-                            default: 'title'
-                        },
-                        path: {
-                            format: String,
-                            default: 'auctions/{title}'
-                        }
-                    },
-
-                    name: {
-                        name: {
-                            format: String,
-                            default: 'name'
-                        },
-                        path: {
-                            format: String,
-                            default: 'auctions/{name}'
-                        }
-                    },
-
-                    endDate: {
-                        name: {
-                            format: String,
-                            default: 'endDate'
-                        },
-                        path: {
-                            format: String,
-                            default: 'auctions/{endDate}'
-                        }
-                    },
-
-                    removal: {
-                        name: {
-                            format: String,
-                            default: 'removal'
-                        },
-                        path: {
-                            format: String,
-                            default: 'auctions/{removal}'
-                        }
-                    },
-
-                    locationAddress: {
-                        name: {
-                            format: String,
-                            default: 'locationAddress'
-                        },
-                        path: {
-                            format: String,
-                            default: 'auctions/{locationAddress}'
-                        }
-                    },
-
                     addDate: {
+                        doc: 'Date crawled.',
                         name: {
                             format: String,
                             default: 'addDate'
@@ -213,18 +137,44 @@ module.exports = {
                         }
                     },
 
-                    sanitized: {
+                    auctionNumber: {
+                        doc: 'BidFTA auction id. idk if this will ever change or if they will delete old numbers and reuse ids.',
                         name: {
                             format: String,
-                            default: 'sanitized'
+                            default: 'auctionNumber'
                         },
                         path: {
                             format: String,
-                            default: 'auctions/{sanitized}'
+                            default: 'auctions/{auctionNumber}'
+                        }
+                    },
+
+                    endDate: {
+                        doc: 'Auction end date.',
+                        name: {
+                            format: String,
+                            default: 'endDate'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{endDate}'
+                        }
+                    },
+
+                    itemList: {
+                        doc: 'Item numbers listed in auction.',
+                        name: {
+                            format: String,
+                            default: 'itemList'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{itemList}'
                         }
                     },
 
                     itemsCrawled: {
+                        doc: 'Whether items have been crawled for info.',
                         name: {
                             format: String,
                             default: 'itemsCrawled'
@@ -235,14 +185,75 @@ module.exports = {
                         }
                     },
 
-                    itemList: {
+                    locationAddress: {
                         name: {
+                            doc: 'Location address of auction. Eventually want reference to location in firestore',
                             format: String,
-                            default: 'itemList'
+                            default: 'locationAddress'
                         },
                         path: {
                             format: String,
-                            default: 'auctions/{itemList}'
+                            default: 'auctions/{locationAddress}'
+                        }
+                    },
+
+                    name: {
+                        doc: 'Name of the auction, combination of location abbrev and idk what number. (ex TK421)',
+                        name: {
+                            format: String,
+                            default: 'name'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{name}'
+                        }
+                    },
+
+                    numItems: {
+                        doc: 'Number of items in auction; helpful for determining item urls for later crawl.',
+                        name: {
+                            format: String,
+                            default: 'numItems'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{numItems}'
+                        }
+                    },
+
+                    removal: {
+                        doc: 'Dates/times of pickup availability.',
+                        name: {
+                            format: String,
+                            default: 'removal'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{removal}'
+                        }
+                    },
+
+                    sanitized: {
+                        doc: 'Whether additional sanitization has occurred.',
+                        name: {
+                            format: String,
+                            default: 'sanitized'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{sanitized}'
+                        }
+                    },
+
+                    title: {
+                        doc: 'Auction title.',
+                        name: {
+                            format: String,
+                            default: 'title'
+                        },
+                        path: {
+                            format: String,
+                            default: 'auctions/{title}'
                         }
                     },
                 }
@@ -464,29 +475,34 @@ module.exports = {
             },
 
             auction: {
-                title: {
-                    format: String,
-                    default: '#content-holder > div:nth-child(1) > nav > ol > li.breadcrumb-item.active'
-                },
-
-                name: {
-                    format: String,
-                    default: '#content-holder > div.container-fluid.padd-0 > div.detail-box > div.col-lg-9.col-md-8.col-sm-7.right-box > h1:nth-child(2)'
-                },
-
                 endDate: {
                     format: String,
-                    default: '#content-holder > div.container-fluid.padd-0 > div.detail-box > div.col-lg-3.col-md-4.col-sm-5.col-xs-12.left-box > div > div.relative > aside:nth-child(5) > p:nth-child(3)'
+                    default: '#content-holder div.detail-box > div.left-box > div > div.relative > aside:nth-child(5) > p:nth-child(3)'
                 },
 
                 locationAddress: {
                     format: String,
-                    default: '#content-holder > div.container-fluid.padd-0 > div.detail-box > div.col-lg-3.col-md-4.col-sm-5.col-xs-12.left-box > div > div.relative > aside:nth-child(6) > p:nth-child(3)'
+                    default: '#content-holder div.detail-box > div.left-box > div > div.relative > aside:nth-child(6) > p:nth-child(3)'
+                },
+
+                name: {
+                    format: String,
+                    default: '#content-holder div.detail-box > div.right-box > h1:nth-child(2)'
+                },
+
+                numItems: {
+                    format: String,
+                    default: '#content-holder div.detail-box > div.left-box > div > div.relative > div > a > div'
                 },
 
                 removal: {
                     format: String,
-                    default: '#content-holder > div.container-fluid.padd-0 > div.detail-box > div.col-lg-9.col-md-8.col-sm-7.right-box > p:nth-child(10)'
+                    default: '#content-holder div.detail-box > div.right-box > p:nth-child(10)'
+                },
+
+                title: {
+                    format: String,
+                    default: '#content-holder > div:nth-child(1) > nav > ol > li.breadcrumb-item.active'
                 },
             }
         },

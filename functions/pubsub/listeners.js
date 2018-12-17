@@ -24,7 +24,7 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
 
     console.log('preparing crawl for auctions')
     const highestGoodAuction = await fsFuncs.findHighestGoodAuction()
-    const highestGoodAuctionNum = highestGoodAuction[vars.FS_AUCTION_AUCTION_NUMBER_NAME]
+    const highestGoodAuctionNum = highestGoodAuction[vars.FS_AUCTION_AUCTION_NUMBER]
     const badAuctionNums = await fsFuncs.getUnusedAuctionNumbers()
     const highestBadAuctionNum = badAuctionNums.sort((a, b) => { return b - a })[0]
     const isHighestBadNumberTooHigh = highestBadAuctionNum > highestGoodAuctionNum + vars.PS_FIND_AUCTIONS_AMOUNT
@@ -45,11 +45,11 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
                 badAuctionNums.push(num)
             }
         } else {
-            auctionInfo[vars.FS_AUCTION_ADD_DATE_NAME] = new Date()
-            auctionInfo[vars.FS_AUCTION_AUCTION_NUMBER_NAME] = num
-            auctionInfo[vars.FS_AUCTION_ITEM_LIST_NAME] = []
-            auctionInfo[vars.FS_AUCTION_ITEMS_CRAWLED_NAME] = false
-            auctionInfo[vars.FS_AUCTION_SANITIZED_NAME] = false
+            auctionInfo[vars.FS_AUCTION_ADD_DATE] = new Date()
+            auctionInfo[vars.FS_AUCTION_AUCTION_NUMBER] = num
+            auctionInfo[vars.FS_AUCTION_ITEM_LIST] = []
+            auctionInfo[vars.FS_AUCTION_ITEMS_CRAWLED] = false
+            auctionInfo[vars.FS_AUCTION_SANITIZED] = false
             fsFuncs.addNewAuction(auctionInfo)
             console.log('auctionInfo set for', num)
         }

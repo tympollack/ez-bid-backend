@@ -24,15 +24,15 @@ exports.getFsUserSession = async userId => {
 
     return {
         userId: userId,
-        bidnum: user[vars.FS_USER_BIDNUM_NAME],
-        bidpw: user[vars.FS_USER_BIDPW_NAME],
-        session: user[vars.FS_USER_SESSION_NAME]
+        bidnum: user[vars.FS_USER_BIDNUM],
+        bidpw: user[vars.FS_USER_BIDPW],
+        session: user[vars.FS_USER_SESSION]
     }
 }
 
 exports.findHighestGoodAuction = async () => {
     const auctionsSnap = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name)
-        .orderBy(vars.FS_AUCTION_AUCTION_NUMBER_NAME, 'desc')
+        .orderBy(vars.FS_AUCTION_AUCTION_NUMBER, 'desc')
         .limit(1)
         .get()
 
@@ -57,12 +57,12 @@ exports.getUnusedAuctionNumbers = async () => {
 
 exports.addUnusedAuctionNumber = async num => {
     db.collection(vars.FS_COLLECTIONS_INFO.name).add({
-        [vars.FS_INFO_TYPE_NAME]: vars.FS_INFO_TYPES.badAuctionNum,
-        [vars.FS_INFO_VALUE_NAME]: num
+        [vars.FS_INFO_TYPE]: vars.FS_INFO_TYPES.badAuctionNum,
+        [vars.FS_INFO_VALUE]: num
     })
 }
 
 exports.addNewAuction = async auctionInfo => {
-    const auctionNumber = auctionInfo[vars.FS_AUCTION_AUCTION_NUMBER_NAME] + '' // requires a string
+    const auctionNumber = auctionInfo[vars.FS_AUCTION_AUCTION_NUMBER] + '' // requires a string
     db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).doc(auctionNumber).set(auctionInfo)
 }

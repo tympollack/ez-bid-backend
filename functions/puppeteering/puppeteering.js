@@ -57,7 +57,7 @@ async function routeCrawlAuction(req, res) {
     await verifyUserId(req, res)
 
     const opts = Object.assign({ db: db }, res.locals)
-    const auctionInfo = await puppetFuncs.crawlAuctionInfo(auctionId, opts)
+    const auctionInfo = await puppetFuncs.crawlAuctionInfo([auctionId], opts)
     res.json(auctionInfo)
 }
 

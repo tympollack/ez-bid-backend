@@ -36,10 +36,10 @@ exports.sendHttpResponse = (res, httpResponse = { status:200, clean:'' }) => {
 
 exports.isValidSession = session => {
     return session
-        && session[vars.FS_SESSION_COOKIE_NAME]
-        && session[vars.FS_SESSION_CSRF_NAME]
-        && session[vars.FS_SESSION_EXPIRATION_NAME]
-        && session[vars.FS_SESSION_EXPIRATION_NAME]._seconds * 1000 > new Date()
+        && session[vars.FS_SESSION_COOKIE]
+        && session[vars.FS_SESSION_CSRF]
+        && session[vars.FS_SESSION_EXPIRATION]
+        && session[vars.FS_SESSION_EXPIRATION]._seconds * 1000 > new Date()
 }
 
 // @deprecated
@@ -51,9 +51,9 @@ exports.getFsUserSession = async (db, userId) => {
 
     return {
         userId: userId,
-        bidnum: user[vars.FS_USER_BIDNUM_NAME],
-        bidpw: user[vars.FS_USER_BIDPW_NAME],
-        session: user[vars.FS_USER_SESSION_NAME]
+        bidnum: user[vars.FS_USER_BIDNUM],
+        bidpw: user[vars.FS_USER_BIDPW],
+        session: user[vars.FS_USER_SESSION]
     }
 }
 
