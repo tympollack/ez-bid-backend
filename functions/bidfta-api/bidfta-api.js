@@ -18,6 +18,9 @@ routes.use('/auctions', getSessionVars)
 routes.post('/auctions/:auctionId/items/:itemId/bid', placeAjaxBid)
 routes.post('/auctions/:auctionId/items/:itemId/maxBid', placeAjaxMaxBid)
 
+routes.use('/items', getSessionVars)
+routes.get('/items/:itemId/bids', getBidHistoryList)
+
 module.exports = routes
 
 /////////////////////////////////////////////////////////////////////
@@ -135,6 +138,23 @@ async function placeAjaxMaxBid(req, res) {
 
     console.log('Placing max bid on item', userId, bidnum, itemId, auctionId, currentBid, maxBid)
     await callBidApi(req, res, bidApiUrls.placeAjaxMaxBid, body)
+}
+
+async function getBidHistoryList(req, res) {
+    const { itemId } = req.params
+    if (!itemId) {
+        utils.sendHttpResponse(res, httpResponses.missingInformation)
+        return
+    }
+
+    const user = res.locals.user
+    const userId = user[fsUsersCollection.fields.id.name]
+    const bidnum = user[fsUsersCollection.fields.bidnum.name]
+    const body = { idItems: itemId }
+    console.log(user)
+
+    console.log('Getting bid history for item', userId, bidnum, itemId)
+    await callBidApi(req, res, bidApiUrls.getBidHistoryList, body)
 }
 
 /////////////////////////////////////////////////////////////////////
