@@ -70,63 +70,6 @@ exports.resizeImages = require('./resize-images')
 
 exports.pubsub = require('./pubsub/listeners')
 
-exports.testFindAuctions = functions.https.onRequest(async (req, res) => {
-    const csrf = 'eb382da8-7bdc-4e10-b965-b1e9d6a228bb'
-    const cookie = 'JSESSIONID=BE52D99BE751BAEA92EEABFAD33AAEC2;' +
-        'AWSALB=8Y4ir7TWFwf52HTLO5M4tpufLr/wlkj8lcVqr/JdNc9/dBuUc2QdGEFCsO0IeoMPWs8IcJa3qbffVHSTNecETV4TGlM5kz8zVl+jZsgMvJifSqciCXkSUWpZ9Rll'
-
-    const baseUrl = 'https://www.bidfta.com/auctionDetails?idauctions='
-    const params = {
-        method: 'POST',
-        mode: 'no-cors',
-        cache: 'no-cache',
-        credentials: 'same-origin',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'cookie': cookie,
-            'x-csrf-token': csrf
-        },
-        redirect: 'follow',
-    }
-
-    const oops = 'Oops Something went wrong.'
-    const ret = {
-        goodNumbers: [],
-        badNumbers: [],
-        httpResponses: {}
-    }
-
-    const promises = []
-
-    const auctionStart = 6000
-    for (let i = 0, max = 100; i < max; i++) {
-        const promise = new Promise(resolve => {
-            cors(req, res, async () => {
-                const auctionNumber = auctionStart + i
-                const url = baseUrl + auctionNumber
-                console.log('Calling auction', auctionNumber)
-                await fetch(url, params)
-                    .then(response => response.text().then(r => {
-                        if (r.indexOf(oops) > -1) ret.badNumbers.push(auctionNumber)
-                        else ret.goodNumbers.push(auctionNumber)
-                    }))
-                    .catch(error => {
-                        ret.httpResponses[auctionNumber] = error
-                    })
-                resolve()
-            })
-        })
-        promises.push(promise)
-    }
-    await Promise.all(promises)
-
-    ret.goodNumbers.sort()
-    ret.badNumbers.sort()
-
-    res.status(200).json(ret)
-})
-
 /////////////////////////////////////////////////////////////////////
 
 function addExpressMiddleware(app) {

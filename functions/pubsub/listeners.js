@@ -3,7 +3,7 @@ const puppetFuncs = require('../puppeteering/puppetFuncs')
 const { config, db, functions, vars } = module.parent.shareable
 
 exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(vars.PS_TOPICS.findNewAuctions).onPublish(async message => {
-    console.log('Finding new auctions...')
+    console.log('Processing queue:', vars.PS_TOPICS.findNewAuctions)
 
     console.log('getting user session from firestore')
     let opts = await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
@@ -62,8 +62,8 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
     if (goodInfos.length) fsFuncs.addAuctions(goodInfos)
 })
 
-exports.loginQueue = functions.runWith(config.puppeteer.opts).pubsub.topic(vars.PS_TOPICS.loginqueue).onPublish(message => {
-    console.log('Processing queue: loginqueue')
+exports.loginQueue = functions.runWith(config.puppeteer.opts).pubsub.topic(vars.PS_TOPICS.loginqueue).onPublish(async message => {
+    console.log('Processing queue:', vars.PS_TOPICS.loginqueue)
     console.log(message)
     if (message.data) {
         const dataString = Buffer.from(message.data, 'base64').toString()
