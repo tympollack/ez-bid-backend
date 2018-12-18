@@ -594,7 +594,11 @@ module.exports = {
         ,
         placeAjaxMaxBid: {
             format: 'url',
-            default: 'https://www.bidfta.com/placeMaxBidAuctionItems'
+            default: 'https://www.bidfta.com/bidfta/placeMaxBidAuctionItems'
+        },
+        getBidHistoryList: {
+            format: 'url',
+            default: 'https://www.bidfta.com/getBidHistoryListItem'
         }
     }
 }
