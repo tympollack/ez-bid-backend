@@ -38,6 +38,19 @@ exports.findHighestGoodAuction = async () => {
     return ret
 }
 
+exports.findHighestNonItemCrawledAuction = async() => {
+    const auctionsSnap = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name)
+        .where(vars.FS_AUCTION_ITEMS_CRAWLED, '==', false)
+        .orderBy(vars.FS_AUCTION_AUCTION_NUMBER, 'desc')
+        .limit(1)
+        .get()
+
+    let ret = {}
+    auctionsSnap.forEach(doc => {
+        ret = doc
+    })
+    return ret
+}
 
 exports.getUnusedAuctionNumbersDoc = async () => {
     return await this.fsGetDocById(vars.FS_COLLECTIONS_INFO.name, vars.FS_INFO_TYPES.badAuctionNum)

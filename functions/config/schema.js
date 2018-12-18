@@ -276,6 +276,102 @@ module.exports = {
                             default: 'items/{itemId}'
                         }
                     },
+
+                    auctionId: {
+                        name: {
+                            doc: 'Auction ID.',
+                            format: String,
+                            default: 'auctionId'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{auctionId}'
+                        }
+                    },
+
+                    brandName: {
+                        name: {
+                            doc: 'Brand name.',
+                            format: String,
+                            default: 'brandName'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{brandName}'
+                        }
+                    },
+
+                    desc: {
+                        name: {
+                            doc: 'Detailed item description.',
+                            format: String,
+                            default: 'desc'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{desc}'
+                        }
+                    },
+
+                    endDate: {
+                        name: {
+                            doc: 'Specific end time of item. Bids within 3 minutes of end time extend time by 3 minutes.',
+                            format: String,
+                            default: 'endDate'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{endDate}'
+                        }
+                    },
+
+                    ftaAuctionNumber: {
+                        name: {
+                            doc: 'BidFTA auction number.',
+                            format: String,
+                            default: 'auctionNumber'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{auctionNumber}'
+                        }
+                    },
+
+                    productImageLinks: {
+                        name: {
+                            doc: 'Links to bidfta aws images.',
+                            format: String,
+                            default: 'productImageLinks'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{productImageLinks}'
+                        }
+                    },
+
+                    status: {
+                        name: {
+                            doc: 'Item status! Brand new, appears new, open box, damaged, broken.',
+                            format: String,
+                            default: 'status'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{status}'
+                        }
+                    },
+
+                    title: {
+                        name: {
+                            doc: 'Item title.',
+                            format: String,
+                            default: 'title'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{title}'
+                        }
+                    },
                 }
             },
 
@@ -433,6 +529,12 @@ module.exports = {
                 default: 'find-new-auctions'
             },
 
+            findItems: {
+                doc: 'Topic added to by cron -> app engine.',
+                format: String,
+                default: 'find-items'
+            },
+
             loginqueue: {
                 doc: 'Topic added to by user needing a new session.',
                 format: String,
@@ -574,6 +676,22 @@ module.exports = {
                 auctionId: {
                     format: String,
                     default: 'idauctions'
+                }
+            }
+        },
+        auctionItems: {
+            url: {
+                format: 'url',
+                default: 'https://www.bidfta.com/auctionItems'
+            },
+            params: {
+                auctionId: {
+                    format: String,
+                    default: 'idauctions'
+                },
+                pageId: {
+                    format: String,
+                    default: 'pageId'
                 }
             }
         },

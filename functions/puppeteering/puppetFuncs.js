@@ -158,7 +158,73 @@ exports.crawlAuctionInfo = async (auctionIds, opts) => {
         }
         name = name.substring(name.indexOf(' ') + 1)
 
-        let endDate = (info[auctionSelectors.endDate.name] || '').replace(',', '').replace('th', '').replace('nd', '').replace('1st', '1').split(' ')
+        let endDate = info[auctionSelectors.endDate.name] || ''
+        endDate = endDate.replace(',', '').replace('rd','').replace('th', '').replace('nd', '').replace('1st', '1').split(' ')
+        endDate[0] = endDate[0].substring(0, 3)
+        endDate = new Date(endDate.join(' '))
+
+        let removal = (info[auctionSelectors.removal.name] || '').replace('  ', ' ')
+        const pickupIdx = removal.toLowerCase().indexOf('pickup')
+        const withIdx = removal.toLowerCase().indexOf('with')
+        const endIdx = pickupIdx > -1 ? pickupIdx : withIdx
+        removal = removal.substring(removal.indexOf(' ') + 1, endIdx).trim()
+
+        sanitaryInfos.push({
+            [vars.FS_AUCTION_NAME]: name,
+            [vars.FS_AUCTION_END_DATE]: endDate,
+            [vars.FS_AUCTION_REMOVAL]: removal,
+            [vars.FS_AUCTION_AUCTION_NUMBER]: info[vars.FS_AUCTION_AUCTION_NUMBER],
+            [vars.FS_AUCTION_LOCATION_ADDRESS]: info[auctionSelectors.locationAddress.name],
+            [vars.FS_AUCTION_NUM_ITEMS]: info[auctionSelectors.numItems.name],
+            [vars.FS_AUCTION_TITLE]: info[auctionSelectors.title.name],
+        })
+    })
+
+    return sanitaryInfos
+}
+
+exports.crawlItemInfo = async (auctionNum, pageNum, startIdx, opts) => {
+    const unsanitaryInfos = []
+    const auctionDetailsConfig = config.bidApiUrls.auctionDetails
+    const auctionDetailsUrl = `${auctionDetailsConfig.url}?${auctionDetailsConfig.params.auctionId}=`
+    const actionResp = await this.puppetAction(opts, async page => {
+        for (let i = 0, len = auctionIds.length; i < len; i++) {
+            const auctionNum = auctionIds[i]
+            const auctionUrl = auctionDetailsUrl + auctionNum
+            await page.goto(auctionUrl, waitUntilIdle)
+            console.log('browser at auction page', auctionUrl)
+
+            const info = { [vars.FS_AUCTION_AUCTION_NUMBER]: auctionNum }
+            const promises = []
+            Object.entries(auctionSelectors).forEach(([key, val]) => {
+                const promise = new Promise(async resolve => {
+                    try {
+                        info[val.name] = await page.$eval(val.selector, el => el.textContent)
+                    } catch(e) {}
+                    resolve()
+                })
+                promises.push(promise)
+            })
+            await Promise.all(promises)
+            unsanitaryInfos.push(info)
+        }
+    })
+
+    // return error
+    if (actionResp.error || !unsanitaryInfos.length) return actionResp
+
+    // sanitize
+    const sanitaryInfos = []
+    unsanitaryInfos.forEach(info => {
+        let name = info[auctionSelectors.name.name]
+        if (!name) {
+            sanitaryInfos.push(info)
+            return
+        }
+        name = name.substring(name.indexOf(' ') + 1)
+
+        let endDate = info[auctionSelectors.endDate.name] || ''
+        endDate = endDate.replace(',', '').replace('rd','').replace('th', '').replace('nd', '').replace('1st', '1').split(' ')
         endDate[0] = endDate[0].substring(0, 3)
         endDate = new Date(endDate.join(' '))
 
