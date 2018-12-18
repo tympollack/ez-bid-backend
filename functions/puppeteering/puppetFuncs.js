@@ -134,7 +134,7 @@ exports.crawlAuctionInfo = async (auctionIds, opts) => {
             Object.entries(auctionSelectors).forEach(([key, val]) => {
                 const promise = new Promise(async resolve => {
                     try {
-                        info[key] = await page.$eval(val, el => el.textContent)
+                        info[val.name] = await page.$eval(val.selector, el => el.textContent)
                     } catch(e) {}
                     resolve()
                 })
@@ -151,29 +151,32 @@ exports.crawlAuctionInfo = async (auctionIds, opts) => {
     // sanitize
     const sanitaryInfos = []
     unsanitaryInfos.forEach(info => {
-        const sanInfo = {
-            [vars.FS_AUCTION_AUCTION_NUMBER]: info[vars.FS_AUCTION_AUCTION_NUMBER],
-            [vars.FS_AUCTION_LOCATION_ADDRESS]: info[auctionSelectors.locationAddress],
-            [vars.FS_AUCTION_NUM_ITEMS]: info[auctionSelectors.numItems],
-            [vars.FS_AUCTION_TITLE]: info[auctionSelectors.title],
+        let name = info[auctionSelectors.name.name]
+        if (!name) {
+            sanitaryInfos.push(info)
+            return
         }
-        
-        const endDate = info[auctionSelectors.endDate].replace(',', '').replace('th', '').replace('nd', '').replace('1st', '1').split(' ')
+        name = name.substring(name.indexOf(' ') + 1)
+
+        let endDate = (info[auctionSelectors.endDate.name] || '').replace(',', '').replace('th', '').replace('nd', '').replace('1st', '1').split(' ')
         endDate[0] = endDate[0].substring(0, 3)
-        sanInfo[vars.FS_AUCTION_END_DATE] = new Date(endDate.join(' '))
+        endDate = new Date(endDate.join(' '))
 
-
-        const name = info[auctionSelectors.name]
-        sanInfo[vars.FS_AUCTION_NAME] = name.substring(name.indexOf(' ') + 1)
-
-        
-        const removal = info[auctionSelectors.removal].replace('  ', ' ')
+        let removal = (info[auctionSelectors.removal.name] || '').replace('  ', ' ')
         const pickupIdx = removal.toLowerCase().indexOf('pickup')
         const withIdx = removal.toLowerCase().indexOf('with')
         const endIdx = pickupIdx > -1 ? pickupIdx : withIdx
-        sanInfo[vars.FS_AUCTION_REMOVAL] = removal.substring(removal.indexOf(' ') + 1, endIdx).trim()
-        
-        sanitaryInfos.push(sanInfo)
+        removal = removal.substring(removal.indexOf(' ') + 1, endIdx).trim()
+
+        sanitaryInfos.push({
+            [vars.FS_AUCTION_NAME]: name,
+            [vars.FS_AUCTION_END_DATE]: endDate,
+            [vars.FS_AUCTION_REMOVAL]: removal,
+            [vars.FS_AUCTION_AUCTION_NUMBER]: info[vars.FS_AUCTION_AUCTION_NUMBER],
+            [vars.FS_AUCTION_LOCATION_ADDRESS]: info[auctionSelectors.locationAddress.name],
+            [vars.FS_AUCTION_NUM_ITEMS]: info[auctionSelectors.numItems.name],
+            [vars.FS_AUCTION_TITLE]: info[auctionSelectors.title.name],
+        })
     })
 
     return sanitaryInfos

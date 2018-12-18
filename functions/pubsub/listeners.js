@@ -10,50 +10,50 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
     let opts = await await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
     if (!opts) {
         console.log('failed getting user session')
-        res.json(opts)
+        res.status(500).json(opts)
         return
     }
-
     opts.db = db
     opts.skipLogin = true
-    if (!utils.isValidSession(opts.session)) {
-        console.log('invalid session, renewing session')
-        await puppetFuncs.puppetAction(opts)
-        Object.assign(opts, await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID))
-    }
 
     console.log('preparing crawl for auctions')
     const highestGoodAuction = await fsFuncs.findHighestGoodAuction()
-    const highestGoodAuctionNum = highestGoodAuction[vars.FS_AUCTION_AUCTION_NUMBER]
+    const highestGoodAuctionNum = highestGoodAuction[vars.FS_AUCTION_AUCTION_NUMBER] || 0
     const badAuctionNums = await fsFuncs.getUnusedAuctionNumbers()
     const highestBadAuctionNum = badAuctionNums.sort((a, b) => { return b - a })[0]
-    const isHighestBadNumberTooHigh = highestBadAuctionNum > highestGoodAuctionNum + vars.PS_FIND_AUCTIONS_AMOUNT
-    const isHighestGoodAuctionTooOld = highestGoodAuction[vars.FS_AUCTION_END_DATE]._seconds * 1000 < new Date()
+    const isHighestBadNumberTooHigh = highestBadAuctionNum >= highestGoodAuctionNum + vars.PS_FIND_AUCTIONS_AMOUNT
+    const isHighestGoodAuctionTooOld = (highestGoodAuction[vars.FS_AUCTION_END_DATE] || {})._seconds * 1000 < new Date()
     const startNum = (isHighestBadNumberTooHigh && isHighestGoodAuctionTooOld) ? highestBadAuctionNum : highestGoodAuctionNum
 
-    let auctionInfo
+    const auctionNumsToGet = []
     for (let i = 1, len = vars.PS_FIND_AUCTIONS_AMOUNT; i <= len; i++) {
-        const num = startNum + i
-        auctionInfo = await puppetFuncs.crawlAuctionInfo(num, opts)
+        let testNum = startNum + i
+        if (badAuctionNums.indexOf(testNum === -1)) auctionNumsToGet.push(testNum)
+    }
 
-        if (auctionInfo.error) {
-            console.log('Unable to crawl auction at this time.', num, auctionInfo.error)
-        } else if (!auctionInfo.name) {
+    const auctionInfos = await puppetFuncs.crawlAuctionInfo(auctionNumsToGet, opts)
+    auctionInfos.forEach(info => {
+        const num = info[vars.FS_AUCTION_AUCTION_NUMBER]
+        if (info.error) {
+            console.log('Unable to crawl auction at this time.', num || '', info.error)
+            return
+        }
+        if (!info.name) {
             console.log('bad auction num', num)
             if (badAuctionNums.indexOf(num) === -1) {
                 fsFuncs.addUnusedAuctionNumber(num)
                 badAuctionNums.push(num)
             }
-        } else {
-            auctionInfo[vars.FS_AUCTION_ADD_DATE] = new Date()
-            auctionInfo[vars.FS_AUCTION_AUCTION_NUMBER] = num
-            auctionInfo[vars.FS_AUCTION_ITEM_LIST] = []
-            auctionInfo[vars.FS_AUCTION_ITEMS_CRAWLED] = false
-            auctionInfo[vars.FS_AUCTION_SANITIZED] = false
-            fsFuncs.addNewAuction(auctionInfo)
-            console.log('auctionInfo set for', num)
+            return
         }
-    }
+
+        info[vars.FS_AUCTION_ADD_DATE] = new Date()
+        info[vars.FS_AUCTION_ITEM_LIST] = []
+        info[vars.FS_AUCTION_ITEMS_CRAWLED] = false
+        info[vars.FS_AUCTION_SANITIZED] = false
+        fsFuncs.addAuction(info)
+        console.log('auctionInfo set for', num)
+    })
 })
 
 exports.loginQueue = functions.runWith(config.puppeteer.opts).pubsub.topic(vars.PS_TOPICS.loginqueue).onPublish(message => {

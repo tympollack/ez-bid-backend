@@ -186,8 +186,8 @@ module.exports = {
                     },
 
                     locationAddress: {
+                        doc: 'Location address of auction. Eventually want reference to location in firestore',
                         name: {
-                            doc: 'Location address of auction. Eventually want reference to location in firestore',
                             format: String,
                             default: 'locationAddress'
                         },
@@ -423,7 +423,7 @@ module.exports = {
     pubsub: {
         findAuctionsAmount: {
             format: Number,
-            default: 4
+            default: 20
         },
 
         topics: {
@@ -450,7 +450,7 @@ module.exports = {
 
             timeoutSeconds: {
                 format: Number,
-                default: 60
+                default: 120
             }
         },
 
@@ -476,33 +476,69 @@ module.exports = {
 
             auction: {
                 endDate: {
-                    format: String,
-                    default: '#content-holder div.detail-box > div.left-box > div > div.relative > aside:nth-child(5) > p:nth-child(3)'
+                    name: {
+                        format: String,
+                        default: 'endDate'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder div.detail-box > div.left-box > div > div.relative > aside:nth-child(5) > p:nth-child(3)'
+                    }
                 },
 
                 locationAddress: {
-                    format: String,
-                    default: '#content-holder div.detail-box > div.left-box > div > div.relative > aside:nth-child(6) > p:nth-child(3)'
+                    name: {
+                        format: String,
+                        default: 'locationAddress'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder div.detail-box > div.left-box > div > div.relative > aside:nth-child(6) > p:nth-child(3)'
+                    }
                 },
 
                 name: {
-                    format: String,
-                    default: '#content-holder div.detail-box > div.right-box > h1:nth-child(2)'
+                    name: {
+                        format: String,
+                        default: 'name'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder div.detail-box > div.right-box > h1:nth-child(2)'
+                    }
                 },
 
                 numItems: {
-                    format: String,
-                    default: '#content-holder div.detail-box > div.left-box > div > div.relative > div > a > div'
+                    name: {
+                        format: String,
+                        default: 'numItems'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder div.detail-box > div.left-box > div > div.relative > div > a > div'
+                    }
                 },
 
                 removal: {
-                    format: String,
-                    default: '#content-holder div.detail-box > div.right-box > p:nth-child(10)'
+                    name: {
+                        format: String,
+                        default: 'removal'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder div.detail-box > div.right-box > p:nth-child(10)'
+                    }
                 },
 
                 title: {
-                    format: String,
-                    default: '#content-holder > div:nth-child(1) > nav > ol > li.breadcrumb-item.active'
+                    name: {
+                        format: String,
+                        default: 'title'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div:nth-child(1) > nav > ol > li.breadcrumb-item.active'
+                    }
                 },
             }
         },

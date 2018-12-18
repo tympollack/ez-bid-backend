@@ -45,12 +45,12 @@ exports.findHighestGoodAuction = async () => {
 
 exports.getUnusedAuctionNumbers = async () => {
     const badSnap = await db.collection(vars.FS_COLLECTIONS_INFO.name)
-        .where(vars.FS_INFO_TYPES.badAuctionNum, '>', 0)
+        .where(vars.FS_INFO_TYPE, '==', vars.FS_INFO_TYPES.badAuctionNum)
         .get()
 
     const badNums = []
     badSnap.forEach(doc => {
-        badNums.push(doc.data()[vars.FS_INFO_TYPES.badAuctionNum])
+        badNums.push(doc.data()[vars.FS_INFO_VALUE])
     })
     return badNums
 }
@@ -62,7 +62,7 @@ exports.addUnusedAuctionNumber = async num => {
     })
 }
 
-exports.addNewAuction = async auctionInfo => {
+exports.addAuction = async auctionInfo => {
     const auctionNumber = auctionInfo[vars.FS_AUCTION_AUCTION_NUMBER] + '' // requires a string
     db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).doc(auctionNumber).set(auctionInfo)
 }
