@@ -423,7 +423,7 @@ module.exports = {
     pubsub: {
         findAuctionsAmount: {
             format: Number,
-            default: 20
+            default: 5
         },
 
         topics: {

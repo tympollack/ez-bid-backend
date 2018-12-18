@@ -29,6 +29,14 @@ exports.test = functions.https.onRequest(async (req, res) => {
     res.send('poop')
 })
 
+const adminApp = express()
+addExpressMiddleware(adminApp)
+const adminRouter = express.Router()
+adminRouter.use('/', require('./admin/admin'))
+adminApp.use(utils.tryCatchAsync)
+adminApp.use(adminRouter) // must be after others
+exports.admin = functions.https.onRequest(adminApp)
+
 const apiApp = express()
 addExpressMiddleware(apiApp)
 const apiRouter = express.Router()
