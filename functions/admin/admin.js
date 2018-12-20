@@ -52,7 +52,7 @@ async function test(req, res) {
     const mergeAuctionChanges = val => {
         auctionRef.set(val, { merge: true })
     }
-    mergeAuctionChanges({ [vars.FS_AUCTION_ITEMS_CRAWLED]: true })
+    // mergeAuctionChanges({ [vars.FS_AUCTION_ITEMS_CRAWLED]: true })
 
     const auction = auctionRef.data()
     const auctionNum = auction[vars.FS_AUCTION_AUCTION_NUMBER]
@@ -63,54 +63,55 @@ async function test(req, res) {
     const startIdx = numCrawledItems - 24 * (pageNum - 1)
 
     const newItemIds = []
-    const itemInfos = await puppetFuncs.crawlItemInfo(auctionNum, pageNum, startIdx, opts)
-    itemInfos.forEach(info => {
-
-    })
-
-    mergeAuctionChanges({
-
-        [vars.FS_AUCTION_ITEMS_CRAWLED]: itemList.numItems === numItems
-    })
-
-    const auctionNumsToGet = []
-    let i = 1
-    while (auctionNumsToGet.length < vars.PS_FIND_AUCTIONS_AMOUNT) {
-        const testNum = startNum + i
-        if (badAuctionNums.indexOf(testNum) === -1) auctionNumsToGet.push(testNum)
-        i++
-    }
-
-    const auctionInfos = await puppetFuncs.crawlAuctionInfo(auctionNumsToGet, opts)
-    const goodInfos = []
-    let shouldUpdateBadNums = false
-    auctionInfos.forEach(info => {
-        const num = info[vars.FS_AUCTION_AUCTION_NUMBER]
-        if (info.error) {
-            console.log('Unable to crawl auction at this time.', num || '', info.error)
-            return
-        }
-        if (!info.name) {
-            console.log('bad auction num', num)
-            if (badAuctionNums.indexOf(num) === -1) {
-                badAuctionNums.push(num)
-                shouldUpdateBadNums = true
-            }
-            return
-        }
-
-        info[vars.FS_AUCTION_ADD_DATE] = new Date()
-        info[vars.FS_AUCTION_ITEM_LIST] = []
-        info[vars.FS_AUCTION_ITEMS_CRAWLED] = false
-        info[vars.FS_AUCTION_SANITIZED] = false
-        goodInfos.push(info)
-        console.log('auctionInfo set for', num)
-    })
-
-    if (shouldUpdateBadNums) fsFuncs.setUnusedAuctionNumbers(badAuctionNums)
-    if (goodInfos.length) fsFuncs.addAuctions(goodInfos)
-
-    res.json(auctionInfos)
+    const itemInfos = await puppetFuncs.crawlItemInfo(7292, pageNum, startIdx, opts)
+    res.json(itemInfos || {})
+    // itemInfos.forEach(info => {
+    //
+    // })
+    //
+    // mergeAuctionChanges({
+    //
+    //     [vars.FS_AUCTION_ITEMS_CRAWLED]: itemList.numItems === numItems
+    // })
+    //
+    // const auctionNumsToGet = []
+    // let i = 1
+    // while (auctionNumsToGet.length < vars.PS_FIND_AUCTIONS_AMOUNT) {
+    //     const testNum = startNum + i
+    //     if (badAuctionNums.indexOf(testNum) === -1) auctionNumsToGet.push(testNum)
+    //     i++
+    // }
+    //
+    // const auctionInfos = await puppetFuncs.crawlAuctionInfo(auctionNumsToGet, opts)
+    // const goodInfos = []
+    // let shouldUpdateBadNums = false
+    // auctionInfos.forEach(info => {
+    //     const num = info[vars.FS_AUCTION_AUCTION_NUMBER]
+    //     if (info.error) {
+    //         console.log('Unable to crawl auction at this time.', num || '', info.error)
+    //         return
+    //     }
+    //     if (!info.name) {
+    //         console.log('bad auction num', num)
+    //         if (badAuctionNums.indexOf(num) === -1) {
+    //             badAuctionNums.push(num)
+    //             shouldUpdateBadNums = true
+    //         }
+    //         return
+    //     }
+    //
+    //     info[vars.FS_AUCTION_ADD_DATE] = new Date()
+    //     info[vars.FS_AUCTION_ITEM_LIST] = []
+    //     info[vars.FS_AUCTION_ITEMS_CRAWLED] = false
+    //     info[vars.FS_AUCTION_SANITIZED] = false
+    //     goodInfos.push(info)
+    //     console.log('auctionInfo set for', num)
+    // })
+    //
+    // if (shouldUpdateBadNums) fsFuncs.setUnusedAuctionNumbers(badAuctionNums)
+    // if (goodInfos.length) fsFuncs.addAuctions(goodInfos)
+    //
+    // res.json(auctionInfos)
 }
 
 async function findNewAuctions(req, res) {

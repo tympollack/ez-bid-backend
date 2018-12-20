@@ -198,7 +198,7 @@ module.exports = {
                     },
 
                     name: {
-                        doc: 'Name of the auction, combination of location abbrev and idk what number. (ex TK421)',
+                        doc: 'Name of the auction, combination of location abbrev and idk what number. (ex THX1138)',
                         name: {
                             format: String,
                             default: 'name'
@@ -289,6 +289,30 @@ module.exports = {
                         }
                     },
 
+                    auctionNumber: {
+                        name: {
+                            doc: 'BidFTA auction number.',
+                            format: String,
+                            default: 'auctionNumber'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{auctionNumber}'
+                        }
+                    },
+
+                    bids: {
+                        name: {
+                            doc: 'Bid list.',
+                            format: String,
+                            default: 'bids'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{bids}'
+                        }
+                    },
+
                     brandName: {
                         name: {
                             doc: 'Brand name.',
@@ -298,6 +322,18 @@ module.exports = {
                         path: {
                             format: String,
                             default: 'items/{brandName}'
+                        }
+                    },
+
+                    currentBid: {
+                        name: {
+                            doc: 'Current bid amount.',
+                            format: String,
+                            default: 'currentBid'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{currentBid}'
                         }
                     },
 
@@ -337,6 +373,66 @@ module.exports = {
                         }
                     },
 
+                    itemNumber: {
+                        name: {
+                            doc: 'Item number. (ex TK421)',
+                            format: String,
+                            default: 'itemNumber'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{itemNumber}'
+                        }
+                    },
+
+                    listedMSRP: {
+                        name: {
+                            doc: 'MSRP according to BidFTA.',
+                            format: String,
+                            default: 'listedMSRP'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{listedMSRP}'
+                        }
+                    },
+
+                    location: {
+                        name: {
+                            doc: 'Item location.',
+                            format: String,
+                            default: 'location'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{location}'
+                        }
+                    },
+
+                    locationId: {
+                        name: {
+                            doc: 'Location ID in firestore.',
+                            format: String,
+                            default: 'locationId'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{locationId}'
+                        }
+                    },
+
+                    model: {
+                        name: {
+                            doc: 'Item model.',
+                            format: String,
+                            default: 'model'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{model}'
+                        }
+                    },
+
                     productImageLinks: {
                         name: {
                             doc: 'Links to bidfta aws images.',
@@ -349,6 +445,18 @@ module.exports = {
                         }
                     },
 
+                    specs: {
+                        name: {
+                            doc: 'Item specifications.',
+                            format: String,
+                            default: 'specs'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{specs}'
+                        }
+                    },
+
                     status: {
                         name: {
                             doc: 'Item status! Brand new, appears new, open box, damaged, broken.',
@@ -358,6 +466,18 @@ module.exports = {
                         path: {
                             format: String,
                             default: 'items/{status}'
+                        }
+                    },
+
+                    statusAdditional: {
+                        name: {
+                            doc: 'Brand name.',
+                            format: String,
+                            default: 'statusAdditional'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{statusAdditional}'
                         }
                     },
 
@@ -522,6 +642,16 @@ module.exports = {
             default: 5
         },
 
+        findItemsAmount: {
+            format: Number,
+            default: 1
+        },
+
+        maxItemsPerPage: {
+            format: Number,
+            default: 24
+        },
+
         topics: {
             findNewAuctions: {
                 doc: 'Topic added to by cron -> app engine.',
@@ -576,7 +706,7 @@ module.exports = {
                 }
             },
 
-            auction: {
+            auctionDetails: {
                 endDate: {
                     name: {
                         format: String,
@@ -642,6 +772,176 @@ module.exports = {
                         default: '#content-holder > div:nth-child(1) > nav > ol > li.breadcrumb-item.active'
                     }
                 },
+            },
+
+            auctionItems: {
+                itemIdDivList: {
+                    name: {
+                        format: String,
+                        default: 'itemIdDivList'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#grid-box div[id^="itemContainer"]'
+                    }
+                },
+
+            },
+
+            itemDetails: {
+                auctionNumber: {
+                    name: {
+                        format: String,
+                        default: 'auctionNumber'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Auction Number"]'
+                    }
+                },
+
+                bidListTable: {
+                    name: {
+                        format: String,
+                        default: 'bidListTable'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#bidTbl_'
+                    }
+                },
+
+                brandName: {
+                    name: {
+                        format: String,
+                        default: 'brandName'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Brand name of item"]'
+                    }
+                },
+
+                currentBid: {
+                    name: {
+                        format: String,
+                        default: 'currentBid'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#currentBid'
+                    }
+                },
+
+                endDate: {
+                    name: {
+                        format: String,
+                        default: 'endDate'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#itemtime'
+                    }
+                },
+
+                listedMSRP: {
+                    name: {
+                        format: String,
+                        default: 'listedMSRP'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Maximum selling retail price of item"]'
+                    }
+                },
+
+                location: {
+                    name: {
+                        format: String,
+                        default: 'location'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Pickup Location"]'
+                    }
+                },
+
+                model: {
+                    name: {
+                        format: String,
+                        default: 'model'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Item model number"]'
+                    }
+                },
+
+                nextBid: {
+                    name: {
+                        format: String,
+                        default: 'nextBid'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#nextBid'
+                    }
+                },
+
+                productLinkList: {
+                    name: {
+                        format: String,
+                        default: 'productLinkList'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#demo4carousel'
+                    }
+                },
+
+                specs: {
+                    name: {
+                        format: String,
+                        default: 'specs'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Item specification in detail"]'
+                    }
+                },
+
+                status: {
+                    name: {
+                        format: String,
+                        default: 'status'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block span.itemStatus'
+                    }
+                },
+
+                statusAdditional: {
+                    name: {
+                        format: String,
+                        default: 'statusAdditional'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Additional information of item condition"]'
+                    }
+                },
+
+                title: {
+                    name: {
+                        format: String,
+                        default: 'title'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Title"]'
+                    }
+                },
             }
         },
 
@@ -693,6 +993,33 @@ module.exports = {
                     format: String,
                     default: 'pageId'
                 }
+            }
+        },
+        itemDetails: {
+            url: {
+                format: 'url',
+                default: 'https://www.bidfta.com/itemDetails'
+            },
+            params: {
+                auctionId: {
+                    format: String,
+                    default: 'idauctions'
+                },
+                itemId: {
+                    format: String,
+                    default: 'idItems'
+                },
+                source: {
+                    name: {
+                        format: String,
+                        default: 'source'
+                    },
+                    value: {
+                        format: String,
+                        default: 'auctionItems'
+                    }
+                }
+
             }
         },
 
