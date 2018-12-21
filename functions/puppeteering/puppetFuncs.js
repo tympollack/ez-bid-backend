@@ -1,4 +1,5 @@
 const config = require('../config/config').get()
+const moment = require('moment')
 const utils = require('../utils')
 const vars = require('../vars')
 
@@ -22,6 +23,9 @@ const fsCookie = sessionFields.cookie.name
 const fsCsrf = sessionFields.csrf.name
 const fsExpiration = sessionFields.expiration.name
 
+// const rejectedResourceTypes = ['stylesheet', 'font', 'image']
+// const rejectedDomainsRegex = /(cdnwidget.com|adroll.com|cdnbasket.net|facebook|zopim.com|zdassets.com)/
+
 function findCookieByName(cookies, name) {
     return cookies.find(c => c.name === name).value
 }
@@ -37,7 +41,7 @@ async function updateUserSession(db, page, userId) {
     session[fsCsrf] = await page.$eval(puppetConfig.selectors.meta.csrf, element => element.content)
 
     const doc = await utils.fsGetDocById(db, fsUsersCollection.name, userId)
-    await doc.set({
+    doc.set({
         [fsSession]: {
             ...session,
             [fsExpiration]: new Date(Date.now() + 82800000)
@@ -59,10 +63,28 @@ exports.puppetAction = async (opts, next) => {
 
         const page = await browser.newPage()
 
+        // todo -- idk see if we can dig into this sometime to not load as much; seems to make puppet time out
+        // await page.setRequestInterception(true)
+        //
+        // page.on('request', (req) => {
+        //
+        //     if (rejectedResourceTypes.indexOf(req.resourceType()) > -1
+        //         // || match === 'images-na.ssl-images-amazon.com'
+        //         // || req.url().match(rejectedDomainsRegex)
+        //     ) {
+        //         req.abort()
+        //     }
+        //     else {
+        //         // const domain = req.url().replace('http://','').replace('https://','').split(/[/?#]/)[0]
+        //         // if (domain !== 'www.bidfta.com') console.log(domain)
+        //         req.continue()
+        //     }
+        // })
+
         if (!skipLogin) {
-            if (forceLogin || !utils.isValidSession(session)) {
+            // if (forceLogin || !utils.isValidSession(session)) {
                 await page.goto(config.bidApiUrls.login, waitUntilIdle)
-                console.log('browser at new fta login screen')
+                console.log('browser at fta login screen')
 
                 const loginSelectors = puppetConfig.selectors.login
                 await page.type(loginSelectors.username, bidnum, { delay: 100 })
@@ -81,22 +103,30 @@ exports.puppetAction = async (opts, next) => {
 
                 console.log('browser logged in')
                 ret.session = await updateUserSession(db, page, userId)
-            } else {
-                const cookie = {
-                    name: fsCookie,
-                    value: session[fsCookie],
-                    domain: 'www.bidfta.com'
-                }
-                const csrf = {
-                    name: fsCsrf,
-                    value: session[fsCsrf],
-                    domain: 'www.bidfta.com'
-                }
-
-                console.log('cookie:', cookie)
-                console.log('csrf:', csrf)
-                // await page.setCookie(cookie, csrf)
-            }
+            // } else {
+            //     const split = session[fsCookie].split(';')
+            //     const jessionId = split[0].replace('JESSIONID=', '')
+            //     const awsalb = split[1].replace('AWSALB=', '')
+            //     const cookies = [
+            //         {
+            //             name: 'JESSIONID',
+            //             value: jessionId,
+            //             domain: 'www.bidfta.com'
+            //         },
+            //         {
+            //             name: 'AWSALB',
+            //             value: awsalb,
+            //             domain: 'www.bidfta.com'
+            //         },
+            //         {
+            //             name: fsCsrf,
+            //             value: session[fsCsrf],
+            //             domain: 'www.bidfta.com'
+            //         }
+            //     ]
+            //
+            //     await page.setCookie(...cookies)
+            // }
         }
 
         if (next) await next(page)
@@ -185,6 +215,7 @@ exports.crawlAuctionInfo = async (auctionIds, opts) => {
 
 exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
     const unsanitaryInfos = []
+    const isOldAuction = opts.skipLogin
     const auctionDetailsUrl = `${vars.BID_AUCTION_ITEMS_URL}?${vars.BID_AUCTION_ITEMS_PARAMS_AUCTIONID}=${auctionId}&${vars.BID_AUCTION_ITEMS_PARAMS_PAGEID}=${pageNum}`
     const actionResp = await this.puppetAction(opts, async page => {
         await page.goto(auctionDetailsUrl, waitUntilIdle)
@@ -207,65 +238,73 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
             await page.goto(itemUrl, waitUntilIdle)
             console.log('browser at item page', itemUrl)
 
-            const info = {}
+            const info = { [vars.FS_ITEM_ID]: itemId }
             const promises = []
             Object.entries(vars.PUP_SELECTORS_ITEM_DETAILS).forEach(([key, val]) => {
                 const promise = new Promise(async resolve => {
                     try {
                         switch(val.name) {
+                            case vars.PUP_SEL_ITEM_DETAILS_BID_LIST_BUTTON.name:
+                                break // do nothing, handled in table search
+
                             case vars.PUP_SEL_ITEM_DETAILS_BID_LIST_TABLE.name:
+                                await Promise.all([
+                                    page.click(vars.PUP_SEL_ITEM_DETAILS_BID_LIST_BUTTON.selector),
+                                    page.waitForResponse(vars.CONFIG_BID_API_URLS.getBidHistoryList)
+                                ])
+
                                 const tableSelector = val.selector + itemId
-                                console.log(tableSelector)
                                 info[val.name] = await page.evaluate((selector) => {
                                     const data = []
                                     document.querySelectorAll(`${selector} tbody tr`).forEach(tr => {
                                         const tds = tr.childNodes
-                                        data.push({
-                                            bidderId: tds[0].textContent,
-                                            bidAmount: tds[1].textContent,
-                                            bidDate: tds[2].textContent
-                                        })
+                                        const ret = tds.length === 3 ? {
+                                                bidderId: tds[0].textContent,
+                                                bidAmount: tds[1].textContent.replace('$ ', ''),
+                                                bidDate: tds[2].textContent
+                                            } : []
+                                        data.push(ret)
                                     })
                                     return data
                                 }, tableSelector)
                                 break
 
-                            // case vars.PUP_SEL_ITEM_DETAILS_PRODUCT_LINK_LIST.name:
-                            //     info[val.name] = await page.evaluate(selector => {
-                            //         const data = []
-                            //         document.querySelectorAll(`${selector} img`).forEach(img => { data.push(img.src) })
-                            //         return data
-                            //     }, val.selector)
-                            //     break
-                            //
-                            // case vars.PUP_SEL_ITEM_DETAILS_AUCTION_NUMBER.name:
-                            // case vars.PUP_SEL_ITEM_DETAILS_BRAND_NAME.name:
-                            // case vars.PUP_SEL_ITEM_DETAILS_LISTED_MSRP.name:
-                            // case vars.PUP_SEL_ITEM_DETAILS_LOCATION.name:
-                            // case vars.PUP_SEL_ITEM_DETAILS_MODEL.name:
-                            // case vars.PUP_SEL_ITEM_DETAILS_SPECS.name:
-                            // case vars.PUP_SEL_ITEM_DETAILS_STATUS_ADDITIONAL.name:
-                            // case vars.PUP_SEL_ITEM_DETAILS_TITLE.name:
-                            //     console.log(val.name)
-                            //     info[val.name] = await page.evaluate(selector => {
-                            //         console.log(document.querySelector(selector))
-                            //         return document.querySelector(selector).nextSibling.nodeValue
-                                // }, val.selector)
-                                // break
-                            //
-                            // case vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name:
-                            // case vars.PUP_SEL_ITEM_DETAILS_END_DATE.name:
-                            // case vars.PUP_SEL_ITEM_DETAILS_NEXT_BID.name:
-                            //     info[val.name] = await page.$eval(val.selector + itemId, el => el.textContent)
-                            //     break
-                            //
-                            // default:
-                            //     info[val.name] = await page.$eval(val.selector, el => el.textContent)
-                            //     break
+                            case vars.PUP_SEL_ITEM_DETAILS_PRODUCT_LINK_LIST.name:
+                                info[val.name] = await page.evaluate(selector => {
+                                    const data = []
+                                    document.querySelectorAll(`${selector} img`).forEach(img => { data.push(img.src) })
+                                    return data
+                                }, val.selector)
+                                break
+
+                            case vars.PUP_SEL_ITEM_DETAILS_AUCTION_NUMBER.name:
+                            case vars.PUP_SEL_ITEM_DETAILS_BRAND_NAME.name:
+                            case vars.PUP_SEL_ITEM_DETAILS_LISTED_MSRP.name:
+                            case vars.PUP_SEL_ITEM_DETAILS_LOCATION.name:
+                            case vars.PUP_SEL_ITEM_DETAILS_MODEL.name:
+                            case vars.PUP_SEL_ITEM_DETAILS_SPECS.name:
+                            case vars.PUP_SEL_ITEM_DETAILS_STATUS_ADDITIONAL.name:
+                            case vars.PUP_SEL_ITEM_DETAILS_TITLE.name:
+                                info[val.name] = await page.evaluate(selector => {
+                                    const el = document.querySelector(selector)
+                                    return el ? el.nextSibling.nodeValue : ''
+                                }, val.selector)
+                                break
+
+                            case vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name:
+                            case vars.PUP_SEL_ITEM_DETAILS_END_DATE.name:
+                                info[val.name] = await page.$eval(val.selector + itemId, el => el.textContent)
+                                break
+
+                            case vars.PUP_SEL_ITEM_DETAILS_NEXT_BID.name:
+                                if (!isOldAuction) info[val.name] = await page.$eval(val.selector + itemId, el => el.textContent)
+                                break
+
+                            default:
+                                info[val.name] = await page.$eval(val.selector, el => el.textContent)
+                                break
                         }
-                    } catch(e) {
-                        console.log(val.name, e)
-                    }
+                    } catch(e) { }
                     resolve()
                 })
                 promises.push(promise)
@@ -276,14 +315,51 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
     })
 
     // return error
-    // if (actionResp.error || !unsanitaryInfos.length) return actionResp
+    if (actionResp.error || !unsanitaryInfos.length) return actionResp
 
     // sanitize
-    // const sanitaryInfos = []
-    // unsanitaryInfos.forEach(info => {
-    //
-    // })
+    const sanitaryInfos = []
+    unsanitaryInfos.forEach(info => {
+        const sanInfo = {
+            [vars.FS_ITEM_ID]: info[vars.FS_ITEM_ID],
+            [vars.FS_ITEM_BIDS]: info[vars.PUP_SEL_ITEM_DETAILS_BID_LIST_TABLE.name] || '',
+            [vars.FS_ITEM_PRODUCT_IMAGE_LINKS]: info[vars.PUP_SEL_ITEM_DETAILS_PRODUCT_LINK_LIST.name] || '',
+            [vars.FS_ITEM_CURRENT_BID]: info[vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name] || '',
+            [vars.FS_ITEM_NEXT_BID]: info[vars.PUP_SEL_ITEM_DETAILS_NEXT_BID.name] || '',
+            [vars.FS_ITEM_STATUS]: info[vars.PUP_SEL_ITEM_DETAILS_STATUS.name] || '',
+        }
 
-    return unsanitaryInfos
-    // return sanitaryInfos
+        sanInfo[vars.FS_ITEM_AUCTION_NUMBER] = info[vars.PUP_SEL_ITEM_DETAILS_AUCTION_NUMBER.name].trim()
+        sanInfo[vars.FS_ITEM_BRAND_NAME] = info[vars.PUP_SEL_ITEM_DETAILS_BRAND_NAME.name].trim()
+        sanInfo[vars.FS_ITEM_ITEM_NUMBER] = info[vars.PUP_SEL_ITEM_DETAILS_ITEM_NUMBER.name].trim()
+        sanInfo[vars.FS_ITEM_LISTED_MSRP] = info[vars.PUP_SEL_ITEM_DETAILS_LISTED_MSRP.name].trim()
+        sanInfo[vars.FS_ITEM_MODEL] = info[vars.PUP_SEL_ITEM_DETAILS_MODEL.name].trim()
+        sanInfo[vars.FS_ITEM_SPECS] = info[vars.PUP_SEL_ITEM_DETAILS_SPECS.name].trim()
+        sanInfo[vars.FS_ITEM_STATUS_ADDITIONAL] = info[vars.PUP_SEL_ITEM_DETAILS_STATUS_ADDITIONAL.name].trim()
+        sanInfo[vars.FS_ITEM_TITLE] = info[vars.PUP_SEL_ITEM_DETAILS_TITLE.name].trim()
+
+        const location = info[vars.PUP_SEL_ITEM_DETAILS_LOCATION.name].split(',')
+        sanInfo[vars.FS_ITEM_LOCATION] = [location[0].trim(), location[1].trim(), location[2].trim()].join(', ')
+
+        let end, endDate
+        if (!isOldAuction) {
+            endDate = info[vars.PUP_SEL_ITEM_DETAILS_END_DATE.name]
+            if (endDate) {
+                const endTimeParts = endDate.split(' ')
+                const days = endTimeParts[0]
+                const time = endTimeParts[2]
+                const timeParts = time.split(':')
+                end = moment().add(days, 'days')
+                    .add(timeParts[0], 'hours')
+                    .add(timeParts[1], 'minutes')
+                    .add(timeParts[2], 'seconds')
+                end = new Date(end)
+            }
+        }
+        sanInfo[vars.FS_ITEM_END_DATE] = end || ''
+
+        sanitaryInfos.push(sanInfo)
+    })
+
+    return sanitaryInfos
 }

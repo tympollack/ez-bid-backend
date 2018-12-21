@@ -2,13 +2,13 @@ const db = require('../firestore/init')
 const vars = require('../vars')
 
 exports.fsGetObjectById = async (collectionName, id) => {
-    const docRef = await this.fsGetDocById(collectionName, id)
+    const docRef = await this.fsGetDocById(collectionName, id + '')
     const doc = await docRef.get()
     return doc.data()
 }
 
 exports.fsGetDocById = async (collectionName, id) => {
-    return await db.collection(collectionName).doc(id)
+    return await db.collection(collectionName).doc(id + '')
 }
 
 exports.getFsUserSession = async userId => {
@@ -47,7 +47,7 @@ exports.findHighestNonItemCrawledAuction = async() => {
 
     let ret = {}
     auctionsSnap.forEach(doc => {
-        ret = doc
+        ret = doc.data()
     })
     return ret
 }

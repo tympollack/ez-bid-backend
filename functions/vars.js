@@ -36,12 +36,14 @@ exports.FS_SERVICE_ACCOUNT = this.CONFIG_FIRESTORE.serviceAccount
 exports.FS_SERVICE_ACCOUNT_ID = this.FS_SERVICE_ACCOUNT.userId
 
 exports.FS_COLLECTIONS = this.CONFIG_FIRESTORE.collections
-exports.FS_COLLECTIONS_INFO = this.FS_COLLECTIONS.info
 exports.FS_COLLECTIONS_AUCTIONS = this.FS_COLLECTIONS.auctions
+exports.FS_COLLECTIONS_INFO = this.FS_COLLECTIONS.info
+exports.FS_COLLECTIONS_ITEMS = this.FS_COLLECTIONS.items
 exports.FS_COLLECTIONS_USERS = this.FS_COLLECTIONS.users
 
 exports.FS_FIELDS_AUCTION = this.FS_COLLECTIONS_AUCTIONS.fields
 exports.FS_FIELDS_INFO = this.FS_COLLECTIONS_INFO.fields
+exports.FS_FIELDS_ITEM = this.FS_COLLECTIONS_ITEMS.fields
 exports.FS_FIELDS_USER = this.FS_COLLECTIONS_USERS.fields
 exports.FS_FIELDS_USER_SESSION = this.FS_FIELDS_USER.session.fields
 
@@ -60,6 +62,28 @@ exports.FS_AUCTION_TITLE = this.FS_FIELDS_AUCTION.title.name
 exports.FS_INFO_TYPE = this.FS_FIELDS_INFO.type.name
 exports.FS_INFO_VALUE = this.FS_FIELDS_INFO.value.name
 exports.FS_INFO_TYPES = this.FS_COLLECTIONS_INFO.types
+
+exports.FS_ITEM_ADD_DATE = this.FS_FIELDS_ITEM.addDate.name
+exports.FS_ITEM_AUCTION_ID = this.FS_FIELDS_ITEM.auctionId.name
+exports.FS_ITEM_AUCTION_NUMBER = this.FS_FIELDS_ITEM.auctionNumber.name
+exports.FS_ITEM_BIDS = this.FS_FIELDS_ITEM.bids.name
+exports.FS_ITEM_BRAND_NAME = this.FS_FIELDS_ITEM.brandName.name
+exports.FS_ITEM_CURRENT_BID = this.FS_FIELDS_ITEM.currentBid.name
+exports.FS_ITEM_DESC = this.FS_FIELDS_ITEM.desc.name
+exports.FS_ITEM_END_DATE = this.FS_FIELDS_ITEM.endDate.name
+exports.FS_ITEM_ID = this.FS_FIELDS_ITEM.id.name
+exports.FS_ITEM_ITEM_NUMBER = this.FS_FIELDS_ITEM.itemNumber.name
+exports.FS_ITEM_LISTED_MSRP = this.FS_FIELDS_ITEM.listedMSRP.name
+exports.FS_ITEM_LOCATION = this.FS_FIELDS_ITEM.location.name
+exports.FS_ITEM_LOCATION_ID = this.FS_FIELDS_ITEM.locationId.name
+exports.FS_ITEM_MODEL = this.FS_FIELDS_ITEM.model.name
+exports.FS_ITEM_NEXT_BID = this.FS_FIELDS_ITEM.nextBid.name
+exports.FS_ITEM_PRODUCT_IMAGE_LINKS = this.FS_FIELDS_ITEM.productImageLinks.name
+exports.FS_ITEM_SPECS = this.FS_FIELDS_ITEM.specs.name
+exports.FS_ITEM_STATUS = this.FS_FIELDS_ITEM.status.name
+exports.FS_ITEM_STATUS_ADDITIONAL = this.FS_FIELDS_ITEM.statusAdditional.name
+exports.FS_ITEM_TITLE = this.FS_FIELDS_ITEM.title.name
+exports.FS_ITEM_UPDATED_DATE = this.FS_FIELDS_ITEM.updatedDate.name
 
 exports.FS_USER_BIDNUM = this.FS_FIELDS_USER.bidnum.name
 exports.FS_USER_BIDPW = this.FS_FIELDS_USER.bidpw.name
@@ -92,10 +116,12 @@ exports.PUP_SELECTORS_META = this.PUP_SELECTORS.meta
 exports.PUP_SEL_AUCTION_ITEMS_ITEM_DIV_LIST = this.PUP_SELECTORS_AUCTION_ITEMS.itemIdDivList
 
 exports.PUP_SEL_ITEM_DETAILS_AUCTION_NUMBER = this.PUP_SELECTORS_ITEM_DETAILS.auctionNumber
+exports.PUP_SEL_ITEM_DETAILS_BID_LIST_BUTTON = this.PUP_SELECTORS_ITEM_DETAILS.bidListButton
 exports.PUP_SEL_ITEM_DETAILS_BID_LIST_TABLE = this.PUP_SELECTORS_ITEM_DETAILS.bidListTable
 exports.PUP_SEL_ITEM_DETAILS_BRAND_NAME = this.PUP_SELECTORS_ITEM_DETAILS.brandName
 exports.PUP_SEL_ITEM_DETAILS_CURRENT_BID = this.PUP_SELECTORS_ITEM_DETAILS.currentBid
 exports.PUP_SEL_ITEM_DETAILS_END_DATE = this.PUP_SELECTORS_ITEM_DETAILS.endDate
+exports.PUP_SEL_ITEM_DETAILS_ITEM_NUMBER = this.PUP_SELECTORS_ITEM_DETAILS.itemNumber
 exports.PUP_SEL_ITEM_DETAILS_LISTED_MSRP = this.PUP_SELECTORS_ITEM_DETAILS.listedMSRP
 exports.PUP_SEL_ITEM_DETAILS_LOCATION = this.PUP_SELECTORS_ITEM_DETAILS.location
 exports.PUP_SEL_ITEM_DETAILS_MODEL = this.PUP_SELECTORS_ITEM_DETAILS.model

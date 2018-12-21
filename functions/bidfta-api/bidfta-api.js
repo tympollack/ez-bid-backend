@@ -27,7 +27,6 @@ module.exports = routes
 
 async function getSessionVars(req, res, next) {
     const userId = req.params.userId || req.body.userId
-    console.log(req.params.userId, req.body.userId, userId)
     if (!userId) {
         utils.sendHttpResponse(res, httpResponses.noUserId)
         return
@@ -150,8 +149,9 @@ async function getBidHistoryList(req, res) {
     const user = res.locals.user
     const userId = user[fsUsersCollection.fields.id.name]
     const bidnum = user[fsUsersCollection.fields.bidnum.name]
-    const body = { idItems: itemId }
-    console.log(user)
+    const body = 'idItems=716905'
+    // const body = `idItems=${itemId}`
+    // const body = { idItems: itemId }
 
     console.log('Getting bid history for item', userId, bidnum, itemId)
     await callBidApi(req, res, bidApiUrls.getBidHistoryList, body)
@@ -176,17 +176,22 @@ function callBidApi(req, res, url, body = {}) {
             cache: 'no-cache',
             credentials: 'same-origin',
             headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
+                'Accept': '*/*',
+                // 'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                // 'Content-Type': 'application/json',
                 'cookie': cookie,
                 'x-csrf-token': csrf
             },
+            "referrer":"https://www.bidfta.com/itemDetails?idauctions=7736&idItems=716905&firstIdItem=716905&source=auctionItems&lastIdItem=717004",
             redirect: 'follow',
             body: JSON.stringify(body)
         }
 
+        console.log(url)
+        console.log(params)
         fetch(url, params)
-            .then(response => response.json().then(r => {
+            .then(response => response.text().then(r => {
                 res.send(r)
             }))
             .catch(error => {

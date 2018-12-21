@@ -269,11 +269,23 @@ module.exports = {
                     id: {
                         name: {
                             format: String,
-                            default: 'itemId'
+                            default: 'id'
                         },
                         path: {
                             format: String,
-                            default: 'items/{itemId}'
+                            default: 'items/{id}'
+                        }
+                    },
+
+                    addDate: {
+                        name: {
+                            doc: 'Auction ID.',
+                            format: String,
+                            default: 'addDate'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{addDate}'
                         }
                     },
 
@@ -361,18 +373,6 @@ module.exports = {
                         }
                     },
 
-                    ftaAuctionNumber: {
-                        name: {
-                            doc: 'BidFTA auction number.',
-                            format: String,
-                            default: 'auctionNumber'
-                        },
-                        path: {
-                            format: String,
-                            default: 'items/{auctionNumber}'
-                        }
-                    },
-
                     itemNumber: {
                         name: {
                             doc: 'Item number. (ex TK421)',
@@ -430,6 +430,18 @@ module.exports = {
                         path: {
                             format: String,
                             default: 'items/{model}'
+                        }
+                    },
+
+                    nextBid: {
+                        name: {
+                            doc: 'Next bid amount.',
+                            format: String,
+                            default: 'nextBid'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{nextBid}'
                         }
                     },
 
@@ -492,6 +504,18 @@ module.exports = {
                             default: 'items/{title}'
                         }
                     },
+
+                    updatedDate: {
+                        name: {
+                            doc: 'Auction ID.',
+                            format: String,
+                            default: 'updatedDate'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{updatedDate}'
+                        }
+                    },
                 }
             },
 
@@ -525,11 +549,11 @@ module.exports = {
                     id: {
                         name: {
                             format: String,
-                            default: 'userId'
+                            default: 'id'
                         },
                         path: {
                             format: String,
-                            default: 'users/{userId}'
+                            default: 'users/{id}'
                         }
                     },
 
@@ -644,7 +668,7 @@ module.exports = {
 
         findItemsAmount: {
             format: Number,
-            default: 1
+            default: 5
         },
 
         maxItemsPerPage: {
@@ -800,6 +824,17 @@ module.exports = {
                     }
                 },
 
+                bidListButton: {
+                    name: {
+                        format: String,
+                        default: 'bidListButton'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.client-bid-box.bidEnableList.dropdown-toggle'
+                    }
+                },
+
                 bidListTable: {
                     name: {
                         format: String,
@@ -841,6 +876,17 @@ module.exports = {
                     selector: {
                         format: String,
                         default: '#itemtime'
+                    }
+                },
+
+                itemNumber: {
+                    name: {
+                        format: String,
+                        default: 'itemNumber'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder .brandCode'
                     }
                 },
 

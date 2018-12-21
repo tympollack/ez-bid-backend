@@ -45,35 +45,41 @@ async function test(req, res) {
         return
     }
     opts.db = db
-    opts.skipLogin = true
 
     console.log('preparing crawl for items')
-    const auctionRef = await fsFuncs.findHighestNonItemCrawledAuction()
-    const mergeAuctionChanges = val => {
-        auctionRef.set(val, { merge: true })
-    }
-    // mergeAuctionChanges({ [vars.FS_AUCTION_ITEMS_CRAWLED]: true })
-
-    const auction = auctionRef.data()
-    const auctionNum = auction[vars.FS_AUCTION_AUCTION_NUMBER]
+    const auction = await fsFuncs.findHighestNonItemCrawledAuction()
+    const auctionId = auction[vars.FS_AUCTION_AUCTION_NUMBER]
     const numItems = auction[vars.FS_AUCTION_NUM_ITEMS]
-    const itemList = auction[vars.FS_AUCTION_ITEM_LIST]
+    const itemList = auction[vars.FS_AUCTION_ITEM_LIST] || []
+    const endDate = auction[vars.FS_AUCTION_END_DATE]
     const numCrawledItems = itemList.length
     const pageNum = Math.ceil((numCrawledItems + 1) / 24)
     const startIdx = numCrawledItems - 24 * (pageNum - 1)
 
-    const newItemIds = []
-    const itemInfos = await puppetFuncs.crawlItemInfo(7292, pageNum, startIdx, opts)
-    res.json(itemInfos || {})
-    // itemInfos.forEach(info => {
-    //
-    // })
-    //
-    // mergeAuctionChanges({
-    //
-    //     [vars.FS_AUCTION_ITEMS_CRAWLED]: itemList.numItems === numItems
-    // })
-    //
+    // if it's an old auction, no need to login; only reason to login is to get next bid amount (may change in future)
+    opts.skipLogin = (endDate || {})._seconds * 1000 < new Date()
+
+    // set auction as being crawled so another thread won't try it
+    const auctionRef = await fsFuncs.fsGetDocById(vars.FS_COLLECTIONS_AUCTIONS.name, auctionId)
+    auctionRef.set({ [vars.FS_AUCTION_ITEMS_CRAWLED]: true }, { merge: true })
+
+    try {
+        const itemInfos = await puppetFuncs.crawlItemInfo(auctionId, pageNum, startIdx, opts)
+
+        const goodInfos = []
+        itemInfos.forEach(info => {
+            itemList.push(info[vars.FS_ITEM_ID])
+            goodInfos.push(info) // todo figure out validation, if an item fails, etc.
+        })
+    } catch(e) {
+        console.log(e)
+    } finally { // make sure crawl gets properly reset
+        auctionRef.set({
+            [vars.FS_AUCTION_ITEM_LIST]: itemList,
+            [vars.FS_AUCTION_ITEMS_CRAWLED]: itemList.numItems === numItems
+        }, { merge: true })
+    }
+
     // const auctionNumsToGet = []
     // let i = 1
     // while (auctionNumsToGet.length < vars.PS_FIND_AUCTIONS_AMOUNT) {
@@ -110,8 +116,8 @@ async function test(req, res) {
     //
     // if (shouldUpdateBadNums) fsFuncs.setUnusedAuctionNumbers(badAuctionNums)
     // if (goodInfos.length) fsFuncs.addAuctions(goodInfos)
-    //
-    // res.json(auctionInfos)
+
+    res.json(itemInfos)
 }
 
 async function findNewAuctions(req, res) {
