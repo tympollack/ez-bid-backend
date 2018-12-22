@@ -259,6 +259,59 @@ module.exports = {
                 }
             },
 
+            bids: {
+                name: {
+                    format: String,
+                    default: 'bids'
+                },
+
+                fields: {
+                    amount: {
+                        name: {
+                            format: String,
+                            default: 'amount'
+                        },
+                        path: {
+                            format: String,
+                            default: 'bids/{amount}'
+                        }
+                    },
+
+                    bidderId: {
+                        name: {
+                            format: String,
+                            default: 'bidderId'
+                        },
+                        path: {
+                            format: String,
+                            default: 'bids/{bidderId}'
+                        }
+                    },
+
+                    date: {
+                        name: {
+                            format: String,
+                            default: 'date'
+                        },
+                        path: {
+                            format: String,
+                            default: 'bids/{date}'
+                        }
+                    },
+
+                    itemId: {
+                        name: {
+                            format: String,
+                            default: 'itemId'
+                        },
+                        path: {
+                            format: String,
+                            default: 'bids/{itemId}'
+                        }
+                    },
+                },
+            },
+
             items: {
                 name: {
                     format: String,
@@ -580,10 +633,49 @@ module.exports = {
                         }
                     },
 
+                    bids: {
+                        name: {
+                            doc: 'FTA bidder number.',
+                            format: String,
+                            default: 'bids'
+                        },
+                        path: {
+                            format: String,
+                            default: 'users/{bids}'
+                        },
+
+                        fields: {
+                            amount: {
+                                name: {
+                                    format: String,
+                                    default: 'amount'
+                                },
+                            },
+
+                            date: {
+                                name: {
+                                    format: String,
+                                    default: 'date'
+                                },
+                            },
+
+                            itemId: {
+                                name: {
+                                    format: String,
+                                    default: 'itemId'
+                                },
+                            },
+                        }
+                    },
+
                     session: {
                         name: {
                             format: String,
                             default: 'session'
+                        },
+                        path: {
+                            format: String,
+                            default: 'users/{session}'
                         },
 
                         fields: {
@@ -642,10 +734,28 @@ module.exports = {
                     },
                 },
 
+                progModConfig: {
+                    baseMinutesAgo: {
+                        name: {
+                            format: String,
+                            default: 'baseMinutesAgo'
+                        },
+                        path: {
+                            format: String,
+                            default: 'info/{baseMinutesAgo}'
+                        }
+                    },
+                },
+
                 types: {
                     badAuctionNum: {
                         format: String,
                         default: 'BAD_AUCTION_NUM'
+                    },
+
+                    progModConfig: {
+                        format: String,
+                        default: 'PROGRAMATICALLY_MODDED_CONFIG'
                     }
                 }
             }
@@ -661,6 +771,11 @@ module.exports = {
     },
 
     pubsub: {
+        baseMinutesAgo: {
+            format: Number,
+            default: 5,
+        },
+
         findAuctionsAmount: {
             format: Number,
             default: 5

@@ -1,9 +1,28 @@
+const moment = require('moment')
 const fsFuncs = require('../firestore/fsFuncs')
 const puppetFuncs = require('../puppeteering/puppetFuncs')
 const { config, db, functions, vars } = module.parent.shareable
 
 exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(vars.PS_TOPICS.findNewAuctions).onPublish(async message => {
     console.log('Processing queue:', vars.PS_TOPICS.findNewAuctions)
+
+    const highestGoodAuction = await fsFuncs.findHighestGoodAuction()
+    const lastAuctionMoment = highestGoodAuction[vars.FS_AUCTION_ADD_DATE]._seconds * 1000
+
+    const progModConfig = await fsFuncs.fsGetObjectById(vars.FS_COLLECTIONS_INFO.name, vars.FS_INFO_TYPES.progModConfig)
+    const lastMinutesAgo = (progModConfig || {})[vars.FS_PMC_MINUTES_AGO] || vars.PS_BASE_MINUTES_AGO
+
+    const lastMomentAgo = moment().subtract(lastMinutesAgo, 'minutes')
+    const wasLastAuctionLongAgo = lastAuctionMoment < lastMomentAgo
+
+    const newTestMinutesAgo = wasLastAuctionLongAgo ? lastMinutesAgo * 2 : vars.PS_BASE_MINUTES_AGO
+    const docRef = await db.collection(vars.FS_COLLECTIONS_INFO.name).doc(vars.FS_INFO_TYPES.progModConfig)
+    docRef.update({ [vars.FS_PMC_MINUTES_AGO]: newTestMinutesAgo })
+
+    if (wasLastAuctionLongAgo) {
+        console.log(`last auction was added more than ${lastMinutesAgo} minutes ago`)
+        return
+    }
 
     console.log('getting user session from firestore')
     let opts = await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
@@ -16,7 +35,6 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
     opts.skipLogin = true
 
     console.log('preparing crawl for auctions')
-    const highestGoodAuction = await fsFuncs.findHighestGoodAuction()
     const highestGoodAuctionNum = highestGoodAuction[vars.FS_AUCTION_AUCTION_NUMBER] || 0
     const badAuctionNums = await fsFuncs.getUnusedAuctionNumbers() || []
     const highestBadAuctionNum = badAuctionNums.sort((a, b) => { return b - a })[0]
@@ -28,7 +46,7 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
     let i = 1
     while (auctionNumsToGet.length < vars.PS_FIND_AUCTIONS_AMOUNT) {
         const testNum = startNum + i
-        if (badAuctionNums.indexOf(testNum) === -1) auctionNumsToGet.push(testNum)
+        auctionNumsToGet.push(testNum)
         i++
     }
 
@@ -41,13 +59,19 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
             console.log('Unable to crawl auction at this time.', num || '', info.error)
             return
         }
+        const idx = badAuctionNums.indexOf(num)
         if (!info.name) {
             console.log('bad auction num', num)
-            if (badAuctionNums.indexOf(num) === -1) {
+            if (idx === -1) {
                 badAuctionNums.push(num)
                 shouldUpdateBadNums = true
             }
             return
+        }
+
+        if (idx > -1) {
+            badAuctionNums.splice(idx, 1)
+            shouldUpdateBadNums = true
         }
 
         info[vars.FS_AUCTION_ADD_DATE] = new Date()
@@ -60,6 +84,7 @@ exports.findNewAuctions = functions.runWith(config.puppeteer.opts).pubsub.topic(
 
     if (shouldUpdateBadNums) fsFuncs.setUnusedAuctionNumbers(badAuctionNums)
     if (goodInfos.length) fsFuncs.addAuctions(goodInfos)
+    else console.log('No good auctions!')
 })
 
 exports.loginQueue = functions.runWith(config.puppeteer.opts).pubsub.topic(vars.PS_TOPICS.loginqueue).onPublish(async message => {

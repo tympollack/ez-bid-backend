@@ -199,13 +199,16 @@ exports.crawlAuctionInfo = async (auctionIds, opts) => {
         const endIdx = pickupIdx > -1 ? pickupIdx : withIdx
         removal = removal.substring(removal.indexOf(' ') + 1, endIdx).trim()
 
+        let numItems = info[auctionSelectors.numItems.name]
+        numItems = parseInt(numItems)
+
         sanitaryInfos.push({
-            [vars.FS_AUCTION_NAME]: name,
             [vars.FS_AUCTION_END_DATE]: endDate,
+            [vars.FS_AUCTION_NAME]: name,
+            [vars.FS_AUCTION_NUM_ITEMS]: numItems,
             [vars.FS_AUCTION_REMOVAL]: removal,
             [vars.FS_AUCTION_AUCTION_NUMBER]: info[vars.FS_AUCTION_AUCTION_NUMBER],
             [vars.FS_AUCTION_LOCATION_ADDRESS]: info[auctionSelectors.locationAddress.name],
-            [vars.FS_AUCTION_NUM_ITEMS]: info[auctionSelectors.numItems.name],
             [vars.FS_AUCTION_TITLE]: info[auctionSelectors.title.name],
         })
     })
@@ -227,7 +230,8 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
             return data.map(d => d.replace('itemContainer', ''))
         }, vars.PUP_SEL_AUCTION_ITEMS_ITEM_DIV_LIST.selector)
 
-        const idsToCrawl = itemIds.slice(startIdx, Math.min(itemIds.length - 1, startIdx + vars.PS_FIND_ITEMS_AMOUNT, vars.PS_MAX_ITEMS_PER_PAGE))
+        console.log(startIdx, Math.min(itemIds.length, startIdx + vars.PS_FIND_ITEMS_AMOUNT, vars.PS_MAX_ITEMS_PER_PAGE))
+        const idsToCrawl = itemIds.slice(startIdx, Math.min(itemIds.length, startIdx + vars.PS_FIND_ITEMS_AMOUNT, vars.PS_MAX_ITEMS_PER_PAGE))
         const itemDetailsUrl = vars.BID_ITEM_DETAILS_URL
             + `?${vars.BID_ITEM_DETAILS_PARAMS_SOURCE}=${vars.BID_ITEM_DETAILS_PARAMS_SOURCE_VAL}`
             + `&${vars.BID_ITEM_DETAILS_PARAMS_AUCTIONID}=${auctionId}`
@@ -322,21 +326,21 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
     unsanitaryInfos.forEach(info => {
         const sanInfo = {
             [vars.FS_ITEM_ID]: info[vars.FS_ITEM_ID],
-            [vars.FS_ITEM_BIDS]: info[vars.PUP_SEL_ITEM_DETAILS_BID_LIST_TABLE.name] || '',
-            [vars.FS_ITEM_PRODUCT_IMAGE_LINKS]: info[vars.PUP_SEL_ITEM_DETAILS_PRODUCT_LINK_LIST.name] || '',
-            [vars.FS_ITEM_CURRENT_BID]: info[vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name] || '',
-            [vars.FS_ITEM_NEXT_BID]: info[vars.PUP_SEL_ITEM_DETAILS_NEXT_BID.name] || '',
-            [vars.FS_ITEM_STATUS]: info[vars.PUP_SEL_ITEM_DETAILS_STATUS.name] || '',
+            [vars.FS_ITEM_BIDS]: info[vars.PUP_SEL_ITEM_DETAILS_BID_LIST_TABLE.name],
+            [vars.FS_ITEM_PRODUCT_IMAGE_LINKS]: info[vars.PUP_SEL_ITEM_DETAILS_PRODUCT_LINK_LIST.name]
         }
 
-        sanInfo[vars.FS_ITEM_AUCTION_NUMBER] = info[vars.PUP_SEL_ITEM_DETAILS_AUCTION_NUMBER.name].trim()
-        sanInfo[vars.FS_ITEM_BRAND_NAME] = info[vars.PUP_SEL_ITEM_DETAILS_BRAND_NAME.name].trim()
-        sanInfo[vars.FS_ITEM_ITEM_NUMBER] = info[vars.PUP_SEL_ITEM_DETAILS_ITEM_NUMBER.name].trim()
-        sanInfo[vars.FS_ITEM_LISTED_MSRP] = info[vars.PUP_SEL_ITEM_DETAILS_LISTED_MSRP.name].trim()
-        sanInfo[vars.FS_ITEM_MODEL] = info[vars.PUP_SEL_ITEM_DETAILS_MODEL.name].trim()
-        sanInfo[vars.FS_ITEM_SPECS] = info[vars.PUP_SEL_ITEM_DETAILS_SPECS.name].trim()
-        sanInfo[vars.FS_ITEM_STATUS_ADDITIONAL] = info[vars.PUP_SEL_ITEM_DETAILS_STATUS_ADDITIONAL.name].trim()
-        sanInfo[vars.FS_ITEM_TITLE] = info[vars.PUP_SEL_ITEM_DETAILS_TITLE.name].trim()
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_CURRENT_BID, info[vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_NEXT_BID, info[vars.PUP_SEL_ITEM_DETAILS_NEXT_BID.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_STATUS, info[vars.PUP_SEL_ITEM_DETAILS_STATUS.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_AUCTION_NUMBER, info[vars.PUP_SEL_ITEM_DETAILS_AUCTION_NUMBER.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_BRAND_NAME, info[vars.PUP_SEL_ITEM_DETAILS_BRAND_NAME.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_ITEM_NUMBER, info[vars.PUP_SEL_ITEM_DETAILS_ITEM_NUMBER.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_LISTED_MSRP, info[vars.PUP_SEL_ITEM_DETAILS_LISTED_MSRP.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_MODEL, info[vars.PUP_SEL_ITEM_DETAILS_MODEL.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_SPECS, info[vars.PUP_SEL_ITEM_DETAILS_SPECS.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_STATUS_ADDITIONAL, info[vars.PUP_SEL_ITEM_DETAILS_STATUS_ADDITIONAL.name])
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_TITLE, info[vars.PUP_SEL_ITEM_DETAILS_TITLE.name])
 
         const location = info[vars.PUP_SEL_ITEM_DETAILS_LOCATION.name].split(',')
         sanInfo[vars.FS_ITEM_LOCATION] = [location[0].trim(), location[1].trim(), location[2].trim()].join(', ')
@@ -362,4 +366,11 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
     })
 
     return sanitaryInfos
+}
+
+/////////////////////////////////////////////////////////////////////
+
+function addToObjectIfNotEmpty(obj, field, str = '') {
+    const s = str.trim()
+    if (s) obj[field] = s
 }

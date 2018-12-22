@@ -1,3 +1,4 @@
+const moment = require('moment')
 const fsFuncs = require('../firestore/fsFuncs')
 const puppetFuncs = require('../puppeteering/puppetFuncs')
 const { db, vars} = module.parent.shareable
@@ -31,7 +32,18 @@ async function badAuctionNumDedupe(req, res) {
 }
 
 async function otherTest(req, res) {
+    const collRef = await db.collection(vars.FS_COLLECTIONS_USERS.name)
+    const tomRef = await collRef.doc('6u4wqYuw4Ho0iBq5DSuY')
+    const harryRef = await collRef.doc('GeDXrTB4CXCQsWLWDLeg')
 
+    try {
+        db.runTransaction(async t => {
+            t.update(tomRef, {age: 100})
+            t.update(harryRef, {age: 100, bids: []})
+        })
+    } catch (e) {
+        res.status(500).send(e)
+    }
 }
 
 async function test(req, res) {
@@ -49,6 +61,11 @@ async function test(req, res) {
     console.log('preparing crawl for items')
     const auction = await fsFuncs.findHighestNonItemCrawledAuction()
     const auctionId = auction[vars.FS_AUCTION_AUCTION_NUMBER]
+    if (!auctionId) {
+        console.log('currently no auctions to crawl')
+        return
+    }
+
     const numItems = auction[vars.FS_AUCTION_NUM_ITEMS]
     const itemList = auction[vars.FS_AUCTION_ITEM_LIST] || []
     const endDate = auction[vars.FS_AUCTION_END_DATE]
@@ -61,63 +78,82 @@ async function test(req, res) {
 
     // set auction as being crawled so another thread won't try it
     const auctionRef = await fsFuncs.fsGetDocById(vars.FS_COLLECTIONS_AUCTIONS.name, auctionId)
-    auctionRef.set({ [vars.FS_AUCTION_ITEMS_CRAWLED]: true }, { merge: true })
+    await auctionRef.update({ [vars.FS_AUCTION_ITEMS_CRAWLED]: true })
 
     try {
-        const itemInfos = await puppetFuncs.crawlItemInfo(auctionId, pageNum, startIdx, opts)
+        const actionResp = await puppetFuncs.crawlItemInfo(auctionId, pageNum, startIdx, opts)
+        if (!Array.isArray(actionResp)) {
+            res.json(actionResp)
+            return
+        }
 
         const goodInfos = []
-        itemInfos.forEach(info => {
-            itemList.push(info[vars.FS_ITEM_ID])
-            goodInfos.push(info) // todo figure out validation, if an item fails, etc.
+        actionResp.forEach(info => {
+            info[vars.FS_ITEM_ADD_DATE] = new Date()
+            goodInfos.push(info) // todo figure out validation that would fail an item
         })
+
+        // const allUserBids = {}
+        // const bidInfos = []
+        // goodInfos.forEach(info => {
+        //     const itemId = info[vars.FS_ITEM_ID]
+        //     itemList.push(itemId)
+        //
+        //     const bids = info[vars.FS_ITEM_BIDS]
+        //     bids.forEach(bid => {
+        //         const { bidAmount, bidderId, bidDate } = bid
+        //         bidInfos.push({
+        //             [vars.FS_BID_AMOUNT]: bidAmount,
+        //             [vars.FS_BID_BIDDER_ID]: bidderId,
+        //             [vars.FS_BID_DATE]: bidDate,
+        //             [vars.FS_BID_ITEM_ID]: itemId
+        //         })
+        //
+        //         if (!allUserBids.hasOwnProperty(bidderId)) allUserBids[bidderId] = { bids: [] }
+        //         allUserBids[bidderId].bids.push({
+        //             [vars.FS_USER_BIDS_AMOUNT]: bidAmount,
+        //             [vars.FS_USER_BIDS_DATE]: bidDate,
+        //             [vars.FS_USER_BIDS_ITEM_ID]: itemId
+        //         })
+        //     })
+        // })
+
+        await fsFuncs.addItems(goodInfos)
+        // await fsFuncs.addBids(bidInfos)
+
+        // const userCollRef = await db.collection(vars.FS_COLLECTIONS_USERS.name)
+        // const userPromises = []
+        // Object.keys(allUserBids).forEach(bidderId => {
+        //     userPromises.push(new Promise(async resolve => {
+        //         const docRef = await userCollRef.where(vars.FS_USER_BIDNUM, '==', bidderId)
+        //         const docSnap = await docRef.get()
+        //         allUserBids[bidderId].docRef = docSnap.exists ? docRef : userCollRef.doc()
+        //         resolve()
+        //     }))
+        // })
+        // await Promise.all(userPromises)
+        // await db.transaction(t => {
+        //     Object.entries.forEach(([bidderId, val]) => {
+        //         const docRef = val.docRef
+        //         t.get(docRef)
+        //             .then(doc => {
+        //                 const newBidList = doc.data()[vars.FS_USER_BIDS]
+        //                 newBidList.concat(val.bids)
+        //                 t.update(docRef, { [vars.FS_USER_BIDS]: newBidList })
+        //             })
+        //     })
+        // }).then(result => { console.log('user bids updated', result) })
+        //     .catch(err => { console.log('error updating user bids', err) })
+
+        res.json(goodInfos)
     } catch(e) {
         console.log(e)
-    } finally { // make sure crawl gets properly reset
-        auctionRef.set({
+        auctionRef.update({
             [vars.FS_AUCTION_ITEM_LIST]: itemList,
-            [vars.FS_AUCTION_ITEMS_CRAWLED]: itemList.numItems === numItems
-        }, { merge: true })
+            [vars.FS_AUCTION_ITEMS_CRAWLED]: itemList.length === numItems
+        })
+        res.send(e)
     }
-
-    // const auctionNumsToGet = []
-    // let i = 1
-    // while (auctionNumsToGet.length < vars.PS_FIND_AUCTIONS_AMOUNT) {
-    //     const testNum = startNum + i
-    //     if (badAuctionNums.indexOf(testNum) === -1) auctionNumsToGet.push(testNum)
-    //     i++
-    // }
-    //
-    // const auctionInfos = await puppetFuncs.crawlAuctionInfo(auctionNumsToGet, opts)
-    // const goodInfos = []
-    // let shouldUpdateBadNums = false
-    // auctionInfos.forEach(info => {
-    //     const num = info[vars.FS_AUCTION_AUCTION_NUMBER]
-    //     if (info.error) {
-    //         console.log('Unable to crawl auction at this time.', num || '', info.error)
-    //         return
-    //     }
-    //     if (!info.name) {
-    //         console.log('bad auction num', num)
-    //         if (badAuctionNums.indexOf(num) === -1) {
-    //             badAuctionNums.push(num)
-    //             shouldUpdateBadNums = true
-    //         }
-    //         return
-    //     }
-    //
-    //     info[vars.FS_AUCTION_ADD_DATE] = new Date()
-    //     info[vars.FS_AUCTION_ITEM_LIST] = []
-    //     info[vars.FS_AUCTION_ITEMS_CRAWLED] = false
-    //     info[vars.FS_AUCTION_SANITIZED] = false
-    //     goodInfos.push(info)
-    //     console.log('auctionInfo set for', num)
-    // })
-    //
-    // if (shouldUpdateBadNums) fsFuncs.setUnusedAuctionNumbers(badAuctionNums)
-    // if (goodInfos.length) fsFuncs.addAuctions(goodInfos)
-
-    res.json(itemInfos)
 }
 
 async function findNewAuctions(req, res) {

@@ -82,17 +82,50 @@ exports.setUnusedAuctionNumbers = async badNums => {
     docRef.set({ [vars.FS_INFO_VALUE]: badNums })
 }
 
-exports.addAuction = async auctionInfo => {
-    const auctionNumber = auctionInfo[vars.FS_AUCTION_AUCTION_NUMBER] + '' // requires a string
-    db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).doc(auctionNumber).set(auctionInfo)
-}
-
 exports.addAuctions = async auctionInfos => {
     const collRef = db.collection(vars.FS_COLLECTIONS_AUCTIONS.name)
     const batch = db.batch()
     auctionInfos.forEach(info => {
         const docRef = collRef.doc(info[vars.FS_AUCTION_AUCTION_NUMBER] + '')
         batch.set(docRef, info)
+    })
+    return await batch.commit()
+}
+
+exports.addItems = async itemInfos => {
+    const collRef = db.collection(vars.FS_COLLECTIONS_ITEMS.name)
+    const batch = db.batch()
+    itemInfos.forEach(info => {
+        const docRef = collRef.doc(info[vars.FS_ITEM_ID] + '')
+        batch.set(docRef, info)
+    })
+    return await batch.commit()
+}
+
+exports.addBids = async bidInfos => {
+    const collRef = db.collection(vars.FS_COLLECTIONS_BIDS.name)
+    const docRefs = []
+    bidInfos.forEach(() => {
+        docRefs.push(collRef.doc())
+    })
+
+    const batch = db.batch()
+    bidInfos.forEach((info, idx) => {
+        batch.set(docRefs[idx], info)
+    })
+    return await batch.commit()
+}
+
+exports.addTestBids = async bidInfos => {
+    const collRef = db.collection('test_bids')
+    const docRefs = []
+    bidInfos.forEach(() => {
+        docRefs.push(collRef.doc())
+    })
+
+    const batch = db.batch()
+    bidInfos.forEach((info, idx) => {
+        batch.set(docRefs[idx], info)
     })
     return await batch.commit()
 }

@@ -37,11 +37,13 @@ exports.FS_SERVICE_ACCOUNT_ID = this.FS_SERVICE_ACCOUNT.userId
 
 exports.FS_COLLECTIONS = this.CONFIG_FIRESTORE.collections
 exports.FS_COLLECTIONS_AUCTIONS = this.FS_COLLECTIONS.auctions
+exports.FS_COLLECTIONS_BIDS = this.FS_COLLECTIONS.bids
 exports.FS_COLLECTIONS_INFO = this.FS_COLLECTIONS.info
 exports.FS_COLLECTIONS_ITEMS = this.FS_COLLECTIONS.items
 exports.FS_COLLECTIONS_USERS = this.FS_COLLECTIONS.users
 
 exports.FS_FIELDS_AUCTION = this.FS_COLLECTIONS_AUCTIONS.fields
+exports.FS_FIELDS_BID = this.FS_COLLECTIONS_BIDS.fields
 exports.FS_FIELDS_INFO = this.FS_COLLECTIONS_INFO.fields
 exports.FS_FIELDS_ITEM = this.FS_COLLECTIONS_ITEMS.fields
 exports.FS_FIELDS_USER = this.FS_COLLECTIONS_USERS.fields
@@ -59,9 +61,17 @@ exports.FS_AUCTION_REMOVAL = this.FS_FIELDS_AUCTION.removal.name
 exports.FS_AUCTION_SANITIZED = this.FS_FIELDS_AUCTION.sanitized.name
 exports.FS_AUCTION_TITLE = this.FS_FIELDS_AUCTION.title.name
 
+exports.FS_BID_AMOUNT = this.FS_FIELDS_BID.amount
+exports.FS_BID_BIDDER_ID = this.FS_FIELDS_BID.bidderId
+exports.FS_BID_DATE = this.FS_FIELDS_BID.date
+exports.FS_BID_ITEM_ID = this.FS_FIELDS_BID.itemId
+
 exports.FS_INFO_TYPE = this.FS_FIELDS_INFO.type.name
 exports.FS_INFO_VALUE = this.FS_FIELDS_INFO.value.name
 exports.FS_INFO_TYPES = this.FS_COLLECTIONS_INFO.types
+exports.FS_INFO_PROG_MOD_CONFIG = this.FS_COLLECTIONS_INFO.progModConfig
+
+exports.FS_PMC_MINUTES_AGO = this.FS_INFO_PROG_MOD_CONFIG.baseMinutesAgo.name
 
 exports.FS_ITEM_ADD_DATE = this.FS_FIELDS_ITEM.addDate.name
 exports.FS_ITEM_AUCTION_ID = this.FS_FIELDS_ITEM.auctionId.name
@@ -88,6 +98,10 @@ exports.FS_ITEM_UPDATED_DATE = this.FS_FIELDS_ITEM.updatedDate.name
 exports.FS_USER_BIDNUM = this.FS_FIELDS_USER.bidnum.name
 exports.FS_USER_BIDPW = this.FS_FIELDS_USER.bidpw.name
 exports.FS_USER_SESSION = this.FS_FIELDS_USER.session.name
+exports.FS_USER_BIDS = this.FS_FIELDS_USER.bids.name
+exports.FS_USER_BIDS_AMOUNT = this.FS_FIELDS_USER.bids.fields.amount.name
+exports.FS_USER_BIDS_DATE = this.FS_FIELDS_USER.bids.fields.date.name
+exports.FS_USER_BIDS_ITEM_ID = this.FS_FIELDS_USER.bids.fields.itemId.name
 
 exports.FS_SESSION_COOKIE = this.FS_FIELDS_USER_SESSION.cookie.name
 exports.FS_SESSION_CSRF = this.FS_FIELDS_USER_SESSION.csrf.name
@@ -97,6 +111,7 @@ exports.FS_SESSION_EXPIRATION = this.FS_FIELDS_USER_SESSION.expiration.name
 
 exports.CONFIG_PUBSUB = config.pubsub
 
+exports.PS_BASE_MINUTES_AGO = this.CONFIG_PUBSUB.baseMinutesAgo
 exports.PS_FIND_AUCTIONS_AMOUNT = this.CONFIG_PUBSUB.findAuctionsAmount
 exports.PS_FIND_ITEMS_AMOUNT = this.CONFIG_PUBSUB.findItemsAmount
 exports.PS_MAX_ITEMS_PER_PAGE = this.CONFIG_PUBSUB.maxItemsPerPage
