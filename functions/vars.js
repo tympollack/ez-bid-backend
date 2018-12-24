@@ -61,10 +61,11 @@ exports.FS_AUCTION_REMOVAL = this.FS_FIELDS_AUCTION.removal.name
 exports.FS_AUCTION_SANITIZED = this.FS_FIELDS_AUCTION.sanitized.name
 exports.FS_AUCTION_TITLE = this.FS_FIELDS_AUCTION.title.name
 
-exports.FS_BID_AMOUNT = this.FS_FIELDS_BID.amount
-exports.FS_BID_BIDDER_ID = this.FS_FIELDS_BID.bidderId
-exports.FS_BID_DATE = this.FS_FIELDS_BID.date
-exports.FS_BID_ITEM_ID = this.FS_FIELDS_BID.itemId
+exports.FS_BID_AMOUNT = this.FS_FIELDS_BID.amount.name
+exports.FS_BID_AUCTION_ID = this.FS_FIELDS_BID.auctionId.name
+exports.FS_BID_BIDDER_ID = this.FS_FIELDS_BID.bidderId.name
+exports.FS_BID_DATE = this.FS_FIELDS_BID.date.name
+exports.FS_BID_ITEM_ID = this.FS_FIELDS_BID.itemId.name
 
 exports.FS_INFO_TYPE = this.FS_FIELDS_INFO.type.name
 exports.FS_INFO_VALUE = this.FS_FIELDS_INFO.value.name
@@ -120,6 +121,7 @@ exports.PS_TOPICS = this.CONFIG_PUBSUB.topics
 /////////////////////////////////////////////////////////////////////
 
 exports.CONFIG_PUPPETEER = config.puppeteer
+exports.PUPPETEER_OPTS = this.CONFIG_PUPPETEER.opts
 
 exports.PUP_SELECTORS = this.CONFIG_PUPPETEER.selectors
 exports.PUP_SELECTORS_AUCTION_DETAILS = this.PUP_SELECTORS.auctionDetails

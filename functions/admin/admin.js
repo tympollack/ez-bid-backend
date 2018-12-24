@@ -1,5 +1,6 @@
 const moment = require('moment')
 const fsFuncs = require('../firestore/fsFuncs')
+const psFuncs = require('../pubsub/psFuncs')
 const puppetFuncs = require('../puppeteering/puppetFuncs')
 const { db, vars} = module.parent.shareable
 
@@ -32,128 +33,15 @@ async function badAuctionNumDedupe(req, res) {
 }
 
 async function otherTest(req, res) {
-    const collRef = await db.collection(vars.FS_COLLECTIONS_USERS.name)
-    const tomRef = await collRef.doc('6u4wqYuw4Ho0iBq5DSuY')
-    const harryRef = await collRef.doc('GeDXrTB4CXCQsWLWDLeg')
-
-    try {
-        db.runTransaction(async t => {
-            t.update(tomRef, {age: 100})
-            t.update(harryRef, {age: 100, bids: []})
-        })
-    } catch (e) {
-        res.status(500).send(e)
-    }
+    psFuncs.findNewAuctions()
+        .then(resp => { res.json(resp) })
+        .catch(err => { res.json(err) })
 }
 
 async function test(req, res) {
-    console.log('Looking up items...')
-
-    console.log('getting user session from firestore')
-    let opts = await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
-    if (!opts) {
-        console.log('failed getting user session')
-        res.status(500).json(opts)
-        return
-    }
-    opts.db = db
-
-    console.log('preparing crawl for items')
-    const auction = await fsFuncs.findHighestNonItemCrawledAuction()
-    const auctionId = auction[vars.FS_AUCTION_AUCTION_NUMBER]
-    if (!auctionId) {
-        console.log('currently no auctions to crawl')
-        return
-    }
-
-    const numItems = auction[vars.FS_AUCTION_NUM_ITEMS]
-    const itemList = auction[vars.FS_AUCTION_ITEM_LIST] || []
-    const endDate = auction[vars.FS_AUCTION_END_DATE]
-    const numCrawledItems = itemList.length
-    const pageNum = Math.ceil((numCrawledItems + 1) / 24)
-    const startIdx = numCrawledItems - 24 * (pageNum - 1)
-
-    // if it's an old auction, no need to login; only reason to login is to get next bid amount (may change in future)
-    opts.skipLogin = (endDate || {})._seconds * 1000 < new Date()
-
-    // set auction as being crawled so another thread won't try it
-    const auctionRef = await fsFuncs.fsGetDocById(vars.FS_COLLECTIONS_AUCTIONS.name, auctionId)
-    await auctionRef.update({ [vars.FS_AUCTION_ITEMS_CRAWLED]: true })
-
-    try {
-        const actionResp = await puppetFuncs.crawlItemInfo(auctionId, pageNum, startIdx, opts)
-        if (!Array.isArray(actionResp)) {
-            res.json(actionResp)
-            return
-        }
-
-        const goodInfos = []
-        actionResp.forEach(info => {
-            info[vars.FS_ITEM_ADD_DATE] = new Date()
-            goodInfos.push(info) // todo figure out validation that would fail an item
-        })
-
-        // const allUserBids = {}
-        // const bidInfos = []
-        // goodInfos.forEach(info => {
-        //     const itemId = info[vars.FS_ITEM_ID]
-        //     itemList.push(itemId)
-        //
-        //     const bids = info[vars.FS_ITEM_BIDS]
-        //     bids.forEach(bid => {
-        //         const { bidAmount, bidderId, bidDate } = bid
-        //         bidInfos.push({
-        //             [vars.FS_BID_AMOUNT]: bidAmount,
-        //             [vars.FS_BID_BIDDER_ID]: bidderId,
-        //             [vars.FS_BID_DATE]: bidDate,
-        //             [vars.FS_BID_ITEM_ID]: itemId
-        //         })
-        //
-        //         if (!allUserBids.hasOwnProperty(bidderId)) allUserBids[bidderId] = { bids: [] }
-        //         allUserBids[bidderId].bids.push({
-        //             [vars.FS_USER_BIDS_AMOUNT]: bidAmount,
-        //             [vars.FS_USER_BIDS_DATE]: bidDate,
-        //             [vars.FS_USER_BIDS_ITEM_ID]: itemId
-        //         })
-        //     })
-        // })
-
-        await fsFuncs.addItems(goodInfos)
-        // await fsFuncs.addBids(bidInfos)
-
-        // const userCollRef = await db.collection(vars.FS_COLLECTIONS_USERS.name)
-        // const userPromises = []
-        // Object.keys(allUserBids).forEach(bidderId => {
-        //     userPromises.push(new Promise(async resolve => {
-        //         const docRef = await userCollRef.where(vars.FS_USER_BIDNUM, '==', bidderId)
-        //         const docSnap = await docRef.get()
-        //         allUserBids[bidderId].docRef = docSnap.exists ? docRef : userCollRef.doc()
-        //         resolve()
-        //     }))
-        // })
-        // await Promise.all(userPromises)
-        // await db.transaction(t => {
-        //     Object.entries.forEach(([bidderId, val]) => {
-        //         const docRef = val.docRef
-        //         t.get(docRef)
-        //             .then(doc => {
-        //                 const newBidList = doc.data()[vars.FS_USER_BIDS]
-        //                 newBidList.concat(val.bids)
-        //                 t.update(docRef, { [vars.FS_USER_BIDS]: newBidList })
-        //             })
-        //     })
-        // }).then(result => { console.log('user bids updated', result) })
-        //     .catch(err => { console.log('error updating user bids', err) })
-
-        res.json(goodInfos)
-    } catch(e) {
-        console.log(e)
-        auctionRef.update({
-            [vars.FS_AUCTION_ITEM_LIST]: itemList,
-            [vars.FS_AUCTION_ITEMS_CRAWLED]: itemList.length === numItems
-        })
-        res.send(e)
-    }
+    psFuncs.findNewItems()
+        .then(resp => { res.json(resp) })
+        .catch(err => { res.status(500).json(err) })
 }
 
 async function findNewAuctions(req, res) {

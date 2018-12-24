@@ -115,17 +115,3 @@ exports.addBids = async bidInfos => {
     })
     return await batch.commit()
 }
-
-exports.addTestBids = async bidInfos => {
-    const collRef = db.collection('test_bids')
-    const docRefs = []
-    bidInfos.forEach(() => {
-        docRefs.push(collRef.doc())
-    })
-
-    const batch = db.batch()
-    bidInfos.forEach((info, idx) => {
-        batch.set(docRefs[idx], info)
-    })
-    return await batch.commit()
-}

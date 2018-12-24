@@ -191,11 +191,13 @@ function callBidApi(req, res, url, body = {}) {
         console.log(url)
         console.log(params)
         fetch(url, params)
-            .then(response => response.text().then(r => {
-                res.send(r)
-            }))
-            .catch(error => {
-                res.status(400).json(error)
+            .then(response => {
+                response.json()
+                    .then(r => { res.json(r) })
+                    .catch(() => {
+                        response.text().then(r => { res.send(r) })
+                    })
             })
+            .catch(e => { res.status(400).json(e) })
     })
 }

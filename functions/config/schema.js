@@ -277,6 +277,17 @@ module.exports = {
                         }
                     },
 
+                    auctionId: {
+                        name: {
+                            format: String,
+                            default: 'auctionId'
+                        },
+                        path: {
+                            format: String,
+                            default: 'bids/{auctionId}'
+                        }
+                    },
+
                     bidderId: {
                         name: {
                             format: String,
@@ -783,7 +794,7 @@ module.exports = {
 
         findItemsAmount: {
             format: Number,
-            default: 5
+            default: 1
         },
 
         maxItemsPerPage: {

@@ -262,12 +262,11 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
                                     const data = []
                                     document.querySelectorAll(`${selector} tbody tr`).forEach(tr => {
                                         const tds = tr.childNodes
-                                        const ret = tds.length === 3 ? {
+                                        if (tds.length === 3) data.push({
                                                 bidderId: tds[0].textContent,
                                                 bidAmount: tds[1].textContent.replace('$ ', ''),
                                                 bidDate: tds[2].textContent
-                                            } : []
-                                        data.push(ret)
+                                            })
                                     })
                                     return data
                                 }, tableSelector)

@@ -10,27 +10,30 @@ const firestore = functions.firestore
 //     })
 
 
-exports.onTestItemCreated = firestore
-    .document('test_items/{id}')
+exports.onItemCreated = firestore
+    .document(vars.FS_FIELDS_ITEM.id.path)
     .onCreate((snap, context) => {
-        const item = snap.data()
-        console.log('new test item: ', item)
+        console.log('new test item: ', snap.id)
 
+        const item = snap.data()
         const itemId = item.id
         const bidInfos = []
         const bids = item[vars.FS_ITEM_BIDS]
+        const auctionId = item[vars.FS_ITEM_AUCTION_ID]
+        console.log(bids)
         bids.forEach(bid => {
             bidInfos.push({
                 [vars.FS_BID_AMOUNT]: bid.bidAmount,
                 [vars.FS_BID_BIDDER_ID]: bid.bidderId,
                 [vars.FS_BID_DATE]: bid.bidDate,
-                [vars.FS_BID_ITEM_ID]: itemId
+                [vars.FS_BID_ITEM_ID]: itemId,
+                [vars.FS_BID_AUCTION_ID]: auctionId,
             })
         })
 
-        fsFuncs.addTestBids(bidInfos)
-            .then(resp => { console.log('bids created for item', itemId, resp) })
-            .catch(err => { console.log('bid creation failed for item', itemId, err)})
+        fsFuncs.addBids(bidInfos)
+            .then(() => { console.log('bids created for item', itemId) })
+            .catch(e => { console.log('bid creation failed for item', itemId, e)})
 
         // todo - check if user is watching for new item or similar
     })
