@@ -1,7 +1,4 @@
-const moment = require('moment')
-const fsFuncs = require('../firestore/fsFuncs')
 const psFuncs = require('../pubsub/psFuncs')
-const puppetFuncs = require('../puppeteering/puppetFuncs')
 const { db, vars} = module.parent.shareable
 
 //    /admin/
@@ -10,7 +7,7 @@ const routes = require('express').Router()
 routes.post('/badAuctionNumDedupe', badAuctionNumDedupe)
 routes.get('/findNewAuctions', findNewAuctions)
 routes.get('/findNewItems', findNewItems)
-routes.get('/test', test)
+routes.post('/test', test)
 routes.get('/otherTest', otherTest)
 routes.get('/testFindAuctions', testFindAuctions)
 
@@ -38,7 +35,18 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
-
+    console.log(req.params, req.body)
+    const newTestMinutesAgo = parseInt(req.body.minutes)
+    let x = 0
+    if (newTestMinutesAgo !== vars.PS_BASE_MINUTES_AGO) {
+        let r = 0
+        while (r !== 2 && x < 20) {
+            x++
+            r = Math.pow(newTestMinutesAgo / 5, 1 / x)
+            console.log(newTestMinutesAgo, x, r)
+        }
+    }
+    res.send(x + '')
 }
 
 async function findNewAuctions(req, res) {

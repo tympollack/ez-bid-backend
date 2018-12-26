@@ -18,17 +18,10 @@ exports.findNewAuctions = async () => {
     const docRef = await db.collection(vars.FS_COLLECTIONS_INFO.name).doc(vars.FS_INFO_TYPES.progModConfig)
     docRef.update({ [vars.FS_PMC_MINUTES_AGO]: newTestMinutesAgo })
 
-    if (wasLastAuctionLongAgo) {
-        console.log(`last auction was added more than ${lastMinutesAgo} minutes ago`)
-        return
-    }
-
     console.log('getting user session from firestore')
     let opts = await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
     if (!opts) {
-        console.log('failed getting user session')
-        res.status(500).json(opts)
-        return
+        return new Error('failed getting user session')
     }
     opts.db = db
     opts.skipLogin = true
@@ -39,7 +32,29 @@ exports.findNewAuctions = async () => {
     const highestBadAuctionNum = badAuctionNums.sort((a, b) => { return b - a })[0]
     const isHighestBadNumberTooHigh = highestBadAuctionNum >= highestGoodAuctionNum + vars.PS_FIND_AUCTIONS_AMOUNT
     const isHighestGoodAuctionTooOld = (highestGoodAuction[vars.FS_AUCTION_END_DATE] || {})._seconds * 1000 < new Date()
-    const startNum = (isHighestBadNumberTooHigh && isHighestGoodAuctionTooOld) ? highestBadAuctionNum : highestGoodAuctionNum
+
+    let startNum
+    if (wasLastAuctionLongAgo) {
+        if (isHighestBadNumberTooHigh) {
+            let x = 0
+            if (newTestMinutesAgo !== vars.PS_BASE_MINUTES_AGO) {
+                let r = 0
+                while (r !== 2 && x < 20) {
+                    x++
+                    r = Math.pow(newTestMinutesAgo / vars.PS_BASE_MINUTES_AGO, 1 / x)
+                }
+                if (x === 20) x = 0
+            }
+            startNum = highestGoodAuctionNum + vars.PS_FIND_AUCTIONS_AMOUNT * x
+        } else {
+            return `last auction was added more than ${lastMinutesAgo} minutes ago`
+        }
+    }
+    else if (isHighestBadNumberTooHigh && isHighestGoodAuctionTooOld) {
+        startNum = highestBadAuctionNum
+    } else {
+        startNum = highestGoodAuctionNum
+    }
 
     const auctionNumsToGet = []
     let i = 1
@@ -83,7 +98,7 @@ exports.findNewAuctions = async () => {
 
     if (shouldUpdateBadNums) fsFuncs.setUnusedAuctionNumbers(badAuctionNums)
     if (goodInfos.length) fsFuncs.addAuctions(goodInfos)
-    else console.log('No good auctions!')
+    else return 'No good auctions!'
 }
 
 exports.findNewItems = async () => {

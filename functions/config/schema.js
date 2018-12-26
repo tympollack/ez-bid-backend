@@ -784,7 +784,7 @@ module.exports = {
     pubsub: {
         baseMinutesAgo: {
             format: Number,
-            default: 5,
+            default: 60,
         },
 
         findAuctionsAmount: {
