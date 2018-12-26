@@ -20,7 +20,6 @@ exports.onItemCreated = firestore
         const bidInfos = []
         const bids = item[vars.FS_ITEM_BIDS]
         const auctionId = item[vars.FS_ITEM_AUCTION_ID]
-        console.log(bids)
         bids.forEach(bid => {
             bidInfos.push({
                 [vars.FS_BID_AMOUNT]: bid.bidAmount,

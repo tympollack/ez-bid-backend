@@ -93,6 +93,7 @@ exports.addAuctions = async auctionInfos => {
 }
 
 exports.addItems = async itemInfos => {
+    if (!itemInfos.length) return Promise.reject('No items to add.')
     const collRef = db.collection(vars.FS_COLLECTIONS_ITEMS.name)
     const batch = db.batch()
     itemInfos.forEach(info => {
@@ -103,6 +104,7 @@ exports.addItems = async itemInfos => {
 }
 
 exports.addBids = async bidInfos => {
+    if (!bidInfos.length) return Promise.reject('No bids to add.')
     const collRef = db.collection(vars.FS_COLLECTIONS_BIDS.name)
     const docRefs = []
     bidInfos.forEach(() => {

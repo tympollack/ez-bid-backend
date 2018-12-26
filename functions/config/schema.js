@@ -794,7 +794,7 @@ module.exports = {
 
         findItemsAmount: {
             format: Number,
-            default: 1
+            default: 5
         },
 
         maxItemsPerPage: {
