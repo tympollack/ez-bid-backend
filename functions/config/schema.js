@@ -809,10 +809,10 @@ module.exports = {
                 default: 'find-new-auctions'
             },
 
-            findItems: {
+            findNewItems: {
                 doc: 'Topic added to by cron -> app engine.',
                 format: String,
-                default: 'find-items'
+                default: 'find-new-items'
             },
 
             loginqueue: {
