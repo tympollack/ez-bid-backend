@@ -994,6 +994,17 @@ module.exports = {
                     }
                 },
 
+                desc: {
+                    name: {
+                        format: String,
+                        default: 'desc'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > span.moreDescription'
+                    }
+                },
+
                 endDate: {
                     name: {
                         format: String,
@@ -1002,6 +1013,17 @@ module.exports = {
                     selector: {
                         format: String,
                         default: '#itemtime'
+                    }
+                },
+
+                endDate2: {
+                    name: {
+                        format: String,
+                        default: 'endDate2'
+                    },
+                    selector: {
+                        format: String,
+                        default: '#content-holder div.auctionInfo > p.discription'
                     }
                 },
 

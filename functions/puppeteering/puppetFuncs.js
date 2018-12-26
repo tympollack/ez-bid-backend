@@ -294,10 +294,10 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
                                 break
 
                             case vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name:
-                            case vars.PUP_SEL_ITEM_DETAILS_END_DATE.name:
                                 info[val.name] = await page.$eval(val.selector + itemId, el => el.textContent)
                                 break
 
+                            case vars.PUP_SEL_ITEM_DETAILS_END_DATE.name:
                             case vars.PUP_SEL_ITEM_DETAILS_NEXT_BID.name:
                                 if (!isOldAuction) info[val.name] = await page.$eval(val.selector + itemId, el => el.textContent)
                                 break
@@ -343,8 +343,21 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
         const location = info[vars.PUP_SEL_ITEM_DETAILS_LOCATION.name].split(',')
         sanInfo[vars.FS_ITEM_LOCATION] = [location[0].trim(), location[1].trim(), location[2].trim()].join(', ')
 
+        const desc = info[vars.PUP_SEL_ITEM_DETAILS_DESC.name] || ''
+        sanInfo[vars.FS_ITEM_DESC] = desc.replace('... Read More', '').replace('Read Less', '').trim()
+
         let end, endDate
-        if (!isOldAuction) {
+        if (isOldAuction) {
+            endDate = info[vars.PUP_SEL_ITEM_DETAILS_END_DATE2.name]
+            if (endDate) {
+                const date = endDate.match(/(\w+ \d+\w\w, 20\d\d)/)[0].replace(',', '').replace('rd','').replace('th', '').replace('nd', '').replace('1st', '1')
+                const dateParts = date.split(' ')
+                const month = dateParts[0].substring(0,3)
+                const time = endDate.match(/(\d+:\d\d \w\w \w{3})/)[0]
+                end = [month, dateParts[1], dateParts[2], time].join(' ')
+                end = new Date(end)
+            }
+        } else {
             endDate = info[vars.PUP_SEL_ITEM_DETAILS_END_DATE.name]
             if (endDate) {
                 const endTimeParts = endDate.split(' ')

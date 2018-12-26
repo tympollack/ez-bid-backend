@@ -31,22 +31,35 @@ async function badAuctionNumDedupe(req, res) {
 }
 
 async function otherTest(req, res) {
+    const snap = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).get()
+    const locations = {}
+    snap.forEach(doc => {
+        const d = doc.data()
+        const locKey = d[vars.FS_AUCTION_LOCATION_ADDRESS]
+        const endDate = d[vars.FS_AUCTION_END_DATE]
+        if (!locations[locKey]) locations[locKey] = {
+            // address: locKey,
+            lastAuctionEnded: endDate,
+            numAuctions: 0,
+            auctions: []
+        }
+        const location = locations[locKey]
+        location.auctions.push(doc.id)
+        if (location.lastAuctionEnded._seconds < endDate._seconds) location.lastAuctionEnded = endDate
+    })
 
+    Object.values(locations).forEach(loc => {
+        const list = loc.auctions
+        loc.numAuctions = list.length
+        loc.auctions = list.sort((a,b)=>b-a)
+        loc.lastAuctionEnded = new Date(loc.lastAuctionEnded._seconds * 1000)
+    })
+
+    res.json(locations)
 }
 
 async function test(req, res) {
-    console.log(req.params, req.body)
-    const newTestMinutesAgo = parseInt(req.body.minutes)
-    let x = 0
-    if (newTestMinutesAgo !== vars.PS_BASE_MINUTES_AGO) {
-        let r = 0
-        while (r !== 2 && x < 20) {
-            x++
-            r = Math.pow(newTestMinutesAgo / 5, 1 / x)
-            console.log(newTestMinutesAgo, x, r)
-        }
-    }
-    res.send(x + '')
+
 }
 
 async function findNewAuctions(req, res) {
