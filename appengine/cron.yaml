@@ -2,3 +2,7 @@ cron:
 - description: Find any auctions created since the last run.
   url: /publish/find-new-auctions
   schedule: every 5 minutes
+
+- description: Find items in auctions.
+  url: /publish/find-new-items
+  schedule: every 1 minutes
