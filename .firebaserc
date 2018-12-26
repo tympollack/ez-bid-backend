@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "ezbidfta867"
+    "default": "ezbidfta867",
+    "dev": "db-test-poop"
   }
 }

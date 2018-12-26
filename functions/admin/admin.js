@@ -40,7 +40,10 @@ async function otherTest(req, res) {
 
 async function test(req, res) {
     psFuncs.findNewItems()
-        .then(resp => { res.json(resp) })
+        .then(resp => {
+            if (typeof resp === 'string') console.log(resp)
+            res.json(resp)
+        })
         .catch(err => { res.status(500).json(err) })
 }
 

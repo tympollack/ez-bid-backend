@@ -230,7 +230,6 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
             return data.map(d => d.replace('itemContainer', ''))
         }, vars.PUP_SEL_AUCTION_ITEMS_ITEM_DIV_LIST.selector)
 
-        console.log(startIdx, Math.min(itemIds.length, startIdx + vars.PS_FIND_ITEMS_AMOUNT, vars.PS_MAX_ITEMS_PER_PAGE))
         const idsToCrawl = itemIds.slice(startIdx, Math.min(itemIds.length, startIdx + vars.PS_FIND_ITEMS_AMOUNT, vars.PS_MAX_ITEMS_PER_PAGE))
         const itemDetailsUrl = vars.BID_ITEM_DETAILS_URL
             + `?${vars.BID_ITEM_DETAILS_PARAMS_SOURCE}=${vars.BID_ITEM_DETAILS_PARAMS_SOURCE_VAL}`

@@ -13,7 +13,7 @@ const firestore = functions.firestore
 exports.onItemCreated = firestore
     .document(vars.FS_FIELDS_ITEM.id.path)
     .onCreate((snap, context) => {
-        console.log('new test item: ', snap.id)
+        console.log('new item: ', snap.id)
 
         const item = snap.data()
         const itemId = item.id

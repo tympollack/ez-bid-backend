@@ -92,8 +92,9 @@ exports.findNewItems = async () => {
     console.log('getting user session from firestore')
     let opts = await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
     if (!opts) {
-        console.log('failed getting user session')
-        throw new Error('failed getting user session')
+        const m = 'failed getting user session'
+        console.log(m)
+        throw new Error(m)
     }
     opts.db = db
 
