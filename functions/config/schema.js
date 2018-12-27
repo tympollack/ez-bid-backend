@@ -413,6 +413,18 @@ module.exports = {
                         }
                     },
 
+                    currentBidder: {
+                        name: {
+                            doc: 'Current winning bidder.',
+                            format: String,
+                            default: 'currentBidder'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{currentBidder}'
+                        }
+                    },
+
                     desc: {
                         name: {
                             doc: 'Detailed item description.',

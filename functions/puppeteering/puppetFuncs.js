@@ -26,10 +26,6 @@ const fsExpiration = sessionFields.expiration.name
 // const rejectedResourceTypes = ['stylesheet', 'font', 'image']
 // const rejectedDomainsRegex = /(cdnwidget.com|adroll.com|cdnbasket.net|facebook|zopim.com|zdassets.com)/
 
-function findCookieByName(cookies, name) {
-    return cookies.find(c => c.name === name).value
-}
-
 async function updateUserSession(db, page, userId) {
     const session = {}
 
@@ -322,13 +318,18 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
     // sanitize
     const sanitaryInfos = []
     unsanitaryInfos.forEach(info => {
+        const bids = info[vars.PUP_SEL_ITEM_DETAILS_BID_LIST_TABLE.name]
         const sanInfo = {
             [vars.FS_ITEM_ID]: info[vars.FS_ITEM_ID],
-            [vars.FS_ITEM_BIDS]: info[vars.PUP_SEL_ITEM_DETAILS_BID_LIST_TABLE.name],
+            [vars.FS_ITEM_BIDS]: bids,
             [vars.FS_ITEM_PRODUCT_IMAGE_LINKS]: info[vars.PUP_SEL_ITEM_DETAILS_PRODUCT_LINK_LIST.name]
         }
 
-        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_CURRENT_BID, info[vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name])
+        const currentBid = info[vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name]
+        const currentBidder = (bids.find(bid => bid.bidAmount === currentBid) || {}).bidderId
+
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_CURRENT_BID, currentBid)
+        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_CURRENT_BIDDER, currentBidder)
         addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_NEXT_BID, info[vars.PUP_SEL_ITEM_DETAILS_NEXT_BID.name])
         addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_STATUS, info[vars.PUP_SEL_ITEM_DETAILS_STATUS.name])
         addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_AUCTION_NUMBER, info[vars.PUP_SEL_ITEM_DETAILS_AUCTION_NUMBER.name])
@@ -384,4 +385,8 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
 function addToObjectIfNotEmpty(obj, field, str = '') {
     const s = str.trim()
     if (s) obj[field] = s
+}
+
+function findCookieByName(cookies, name) {
+    return cookies.find(c => c.name === name).value
 }

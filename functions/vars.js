@@ -82,6 +82,7 @@ exports.FS_ITEM_AUCTION_NUMBER = this.FS_FIELDS_ITEM.auctionNumber.name
 exports.FS_ITEM_BIDS = this.FS_FIELDS_ITEM.bids.name
 exports.FS_ITEM_BRAND_NAME = this.FS_FIELDS_ITEM.brandName.name
 exports.FS_ITEM_CURRENT_BID = this.FS_FIELDS_ITEM.currentBid.name
+exports.FS_ITEM_CURRENT_BIDDER = this.FS_FIELDS_ITEM.currentBidder.name
 exports.FS_ITEM_DESC = this.FS_FIELDS_ITEM.desc.name
 exports.FS_ITEM_END_DATE = this.FS_FIELDS_ITEM.endDate.name
 exports.FS_ITEM_ID = this.FS_FIELDS_ITEM.id.name
