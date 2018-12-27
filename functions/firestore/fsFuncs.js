@@ -117,3 +117,45 @@ exports.addBids = async bidInfos => {
     })
     return await batch.commit()
 }
+
+exports.countFSObjects = async collectionName => {
+    if (!collectionName) return Promise.reject('Need collection name.')
+    const refs = await db.collection(collectionName).get()
+    let amt = 0
+    refs.forEach(() => { amt++ })
+    return amt
+}
+
+exports.generateFSReport = async shouldSave => {
+    console.log('Generating firestore report.')
+    const counts = {}
+    const collections = [
+        vars.FS_COLLECTIONS_AUCTIONS,
+        vars.FS_COLLECTIONS_BIDS,
+        vars.FS_COLLECTIONS_ITEMS,
+        vars.FS_COLLECTIONS_USERS
+    ]
+
+    const promises = []
+    collections.forEach(collection => {
+        promises.push(new Promise(async resolve => {
+            const collectionName = collection.name
+            const count = await this.countFSObjects(collectionName)
+            counts[collectionName] = count
+            console.log(`${count} ${collectionName} reported`)
+            resolve()
+        }))
+    })
+    await Promise.all(promises)
+
+    const info = {
+        [vars.FS_INFO_TIME]: new Date(),
+        [vars.FS_INFO_FIRESTORE_OBJECT_COUNTS]: counts
+    }
+
+    if (shouldSave) {
+        const doc = await this.fsGetDocById(vars.FS_COLLECTIONS_INFO.name, vars.FS_INFO_TYPES.dailyAdminReport)
+        await doc.collection(vars.FS_INFO_TYPES.dailyAdminReport).add(info)
+    }
+    return info
+}

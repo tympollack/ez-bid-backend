@@ -67,6 +67,8 @@ exports.FS_BID_BIDDER_ID = this.FS_FIELDS_BID.bidderId.name
 exports.FS_BID_DATE = this.FS_FIELDS_BID.date.name
 exports.FS_BID_ITEM_ID = this.FS_FIELDS_BID.itemId.name
 
+exports.FS_INFO_FIRESTORE_OBJECT_COUNTS = this.FS_FIELDS_INFO.firestoreObjectCounts.name
+exports.FS_INFO_TIME = this.FS_FIELDS_INFO.time.name
 exports.FS_INFO_TYPE = this.FS_FIELDS_INFO.type.name
 exports.FS_INFO_VALUE = this.FS_FIELDS_INFO.value.name
 exports.FS_INFO_TYPES = this.FS_COLLECTIONS_INFO.types

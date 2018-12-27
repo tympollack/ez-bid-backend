@@ -6,3 +6,7 @@ cron:
 - description: Find items in auctions.
   url: /publish/find-new-items
   schedule: every 1 minutes
+
+- description: Generate admin report.
+  url: /publish/generate-admin-report
+  schedule: every day 00:00

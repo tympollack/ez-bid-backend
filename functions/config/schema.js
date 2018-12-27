@@ -743,6 +743,28 @@ module.exports = {
                             default: 'info/{value}'
                         }
                     },
+
+                    time: {
+                        name: {
+                            format: String,
+                            default: 'time'
+                        },
+                        path: {
+                            format: String,
+                            default: 'info/{time}'
+                        }
+                    },
+
+                    firestoreObjectCounts: {
+                        name: {
+                            format: String,
+                            default: 'firestoreObjectCounts'
+                        },
+                        path: {
+                            format: String,
+                            default: 'info/{firestoreObjectCounts}'
+                        }
+                    },
                 },
 
                 progModConfig: {
@@ -764,10 +786,15 @@ module.exports = {
                         default: 'BAD_AUCTION_NUM'
                     },
 
+                    dailyAdminReport: {
+                        format: String,
+                        default: 'DAILY_ADMIN_REPORT'
+                    },
+
                     progModConfig: {
                         format: String,
                         default: 'PROGRAMATICALLY_MODDED_CONFIG'
-                    }
+                    },
                 }
             }
         },
@@ -803,20 +830,23 @@ module.exports = {
         },
 
         topics: {
+            doc: 'Topics added to by cron -> app engine.',
             findNewAuctions: {
-                doc: 'Topic added to by cron -> app engine.',
                 format: String,
                 default: 'find-new-auctions'
             },
 
             findNewItems: {
-                doc: 'Topic added to by cron -> app engine.',
                 format: String,
                 default: 'find-new-items'
             },
 
+            generateAdminReport: {
+                format: String,
+                default: 'generate-admin-report'
+            },
+
             loginqueue: {
-                doc: 'Topic added to by user needing a new session.',
                 format: String,
                 default: 'loginqueue'
             }

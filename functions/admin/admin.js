@@ -1,3 +1,4 @@
+const fsFuncs = require('../firestore/fsFuncs')
 const psFuncs = require('../pubsub/psFuncs')
 const { db, vars} = module.parent.shareable
 
@@ -5,9 +6,14 @@ const { db, vars} = module.parent.shareable
 const routes = require('express').Router()
 
 routes.post('/badAuctionNumDedupe', badAuctionNumDedupe)
+
+routes.get('/countFirestoreObjects', countFirestoreObjects)
+routes.get('/generateAdminSnapshot', generateAdminSnapshot)
+
 routes.get('/findNewAuctions', findNewAuctions)
 routes.get('/findNewItems', findNewItems)
-routes.post('/test', test)
+
+routes.get('/test', test)
 routes.get('/otherTest', otherTest)
 routes.get('/testFindAuctions', testFindAuctions)
 
@@ -60,6 +66,20 @@ async function otherTest(req, res) {
 
 async function test(req, res) {
 
+}
+
+
+async function countFirestoreObjects(req, res) {
+    const collectionName = req.query.collection
+    fsFuncs.countFSObjects(collectionName)
+        .then(resp => { res.json(resp) })
+        .catch(err => { res.status(500).json(err)})
+}
+
+async function generateAdminSnapshot(req, res) {
+    fsFuncs.generateFSReport(false)
+        .then(resp => { res.json(resp) })
+        .catch(err => { res.status(500).json(err)})
 }
 
 async function findNewAuctions(req, res) {

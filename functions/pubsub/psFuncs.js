@@ -164,55 +164,6 @@ exports.findNewItems = async () => {
     }
 }
 
-/////////////////////////////////////////////////////////////////////
-// dead code saved jic
-
-
-// const allUserBids = {}
-// const bidInfos = []
-// goodInfos.forEach(info => {
-//     const itemId = info[vars.FS_ITEM_ID]
-//     itemList.push(itemId)
-//
-//     const bids = info[vars.FS_ITEM_BIDS]
-//     bids.forEach(bid => {
-//         const { bidAmount, bidderId, bidDate } = bid
-//         bidInfos.push({
-//             [vars.FS_BID_AMOUNT]: bidAmount,
-//             [vars.FS_BID_BIDDER_ID]: bidderId,
-//             [vars.FS_BID_DATE]: bidDate,
-//             [vars.FS_BID_ITEM_ID]: itemId
-//         })
-//
-//         if (!allUserBids.hasOwnProperty(bidderId)) allUserBids[bidderId] = { bids: [] }
-//         allUserBids[bidderId].bids.push({
-//             [vars.FS_USER_BIDS_AMOUNT]: bidAmount,
-//             [vars.FS_USER_BIDS_DATE]: bidDate,
-//             [vars.FS_USER_BIDS_ITEM_ID]: itemId
-//         })
-//     })
-// })
-
-// const userCollRef = await db.collection(vars.FS_COLLECTIONS_USERS.name)
-// const userPromises = []
-// Object.keys(allUserBids).forEach(bidderId => {
-//     userPromises.push(new Promise(async resolve => {
-//         const docRef = await userCollRef.where(vars.FS_USER_BIDNUM, '==', bidderId)
-//         const docSnap = await docRef.get()
-//         allUserBids[bidderId].docRef = docSnap.exists ? docRef : userCollRef.doc()
-//         resolve()
-//     }))
-// })
-// await Promise.all(userPromises)
-// await db.transaction(t => {
-//     Object.entries.forEach(([bidderId, val]) => {
-//         const docRef = val.docRef
-//         t.get(docRef)
-//             .then(doc => {
-//                 const newBidList = doc.data()[vars.FS_USER_BIDS]
-//                 newBidList.concat(val.bids)
-//                 t.update(docRef, { [vars.FS_USER_BIDS]: newBidList })
-//             })
-//     })
-// }).then(result => { console.log('user bids updated', result) })
-//     .catch(err => { console.log('error updating user bids', err) })
+exports.generateAdminReport = async () => {
+    return fsFuncs.generateFSReport(true)
+}
