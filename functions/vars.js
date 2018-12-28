@@ -67,12 +67,22 @@ exports.FS_BID_BIDDER_ID = this.FS_FIELDS_BID.bidderId.name
 exports.FS_BID_DATE = this.FS_FIELDS_BID.date.name
 exports.FS_BID_ITEM_ID = this.FS_FIELDS_BID.itemId.name
 
-exports.FS_INFO_FIRESTORE_OBJECT_COUNTS = this.FS_FIELDS_INFO.firestoreObjectCounts.name
-exports.FS_INFO_TIME = this.FS_FIELDS_INFO.time.name
 exports.FS_INFO_TYPE = this.FS_FIELDS_INFO.type.name
 exports.FS_INFO_VALUE = this.FS_FIELDS_INFO.value.name
+exports.FS_INFO_ADMIN_REPORT = this.FS_COLLECTIONS_INFO.adminReport
 exports.FS_INFO_TYPES = this.FS_COLLECTIONS_INFO.types
 exports.FS_INFO_PROG_MOD_CONFIG = this.FS_COLLECTIONS_INFO.progModConfig
+
+exports.FS_AR_FIRESTORE_OBJECT_COUNTS_BASE = this.FS_INFO_ADMIN_REPORT.firestoreObjectCounts
+exports.FS_AR_FIRESTORE_OBJECT_COUNTS = this.FS_AR_FIRESTORE_OBJECT_COUNTS_BASE.name
+exports.FS_AR_AUCTION_COUNT = this.FS_AR_FIRESTORE_OBJECT_COUNTS_BASE.auctions
+exports.FS_AR_BID_COUNT = this.FS_AR_FIRESTORE_OBJECT_COUNTS_BASE.bids
+exports.FS_AR_ITEM_COUNT = this.FS_AR_FIRESTORE_OBJECT_COUNTS_BASE.items
+exports.FS_AR_USER_COUNT = this.FS_AR_FIRESTORE_OBJECT_COUNTS_BASE.users
+
+exports.FS_AR_AVERAGE_BID = this.FS_INFO_ADMIN_REPORT.averageBid
+exports.FS_AR_TOTAL_BID_AMOUNT = this.FS_INFO_ADMIN_REPORT.totalBidAmount
+exports.FS_AR_TIME = this.FS_INFO_ADMIN_REPORT.time
 
 exports.FS_PMC_MINUTES_AGO = this.FS_INFO_PROG_MOD_CONFIG.baseMinutesAgo.name
 

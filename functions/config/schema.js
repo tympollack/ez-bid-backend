@@ -124,6 +124,17 @@ module.exports = {
                     default: 'auctions'
                 },
 
+                id: {
+                    name: {
+                        format: String,
+                        default: 'id'
+                    },
+                    path: {
+                        format: String,
+                        default: 'auctions/{id}'
+                    }
+                },
+
                 fields: {
                     addDate: {
                         doc: 'Date crawled.',
@@ -265,6 +276,17 @@ module.exports = {
                     default: 'bids'
                 },
 
+                id: {
+                    name: {
+                        format: String,
+                        default: 'id'
+                    },
+                    path: {
+                        format: String,
+                        default: 'bids/{id}'
+                    }
+                },
+
                 fields: {
                     amount: {
                         name: {
@@ -327,6 +349,17 @@ module.exports = {
                 name: {
                     format: String,
                     default: 'items'
+                },
+
+                id: {
+                    name: {
+                        format: String,
+                        default: 'id'
+                    },
+                    path: {
+                        format: String,
+                        default: 'items/{id}'
+                    }
                 },
 
                 fields: {
@@ -601,6 +634,17 @@ module.exports = {
                     default: 'locations'
                 },
 
+                id: {
+                    name: {
+                        format: String,
+                        default: 'id'
+                    },
+                    path: {
+                        format: String,
+                        default: 'locations/{id}'
+                    }
+                },
+
                 fields: {
                     id: {
                         name: {
@@ -619,6 +663,17 @@ module.exports = {
                 name: {
                     format: String,
                     default: 'users'
+                },
+
+                id: {
+                    name: {
+                        format: String,
+                        default: 'id'
+                    },
+                    path: {
+                        format: String,
+                        default: 'users/{id}'
+                    }
                 },
 
                 fields: {
@@ -755,27 +810,45 @@ module.exports = {
                             default: 'info/{value}'
                         }
                     },
+                },
 
-                    time: {
-                        name: {
-                            format: String,
-                            default: 'time'
-                        },
-                        path: {
-                            format: String,
-                            default: 'info/{time}'
-                        }
-                    },
-
+                adminReport: {
                     firestoreObjectCounts: {
                         name: {
                             format: String,
                             default: 'firestoreObjectCounts'
                         },
-                        path: {
+                        auctions: {
                             format: String,
-                            default: 'info/{firestoreObjectCounts}'
-                        }
+                            default: 'auctionCount'
+                        },
+                        bids: {
+                            format: String,
+                            default: 'bidCount'
+                        },
+                        items: {
+                            format: String,
+                            default: 'itemCount'
+                        },
+                        users: {
+                            format: String,
+                            default: 'userCount'
+                        },
+                    },
+
+                    averageBid: {
+                        format: String,
+                        default: 'averageBid'
+                    },
+
+                    totalBidAmount: {
+                        format: String,
+                        default: 'totalBidAmount'
+                    },
+
+                    time: {
+                        format: String,
+                        default: 'time'
                     },
                 },
 

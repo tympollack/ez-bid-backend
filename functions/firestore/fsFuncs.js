@@ -124,6 +124,23 @@ exports.countFSObjects = async collectionName => {
     return snap.size
 }
 
+exports.documentWriteCounter = async event => {
+    const ed = event.data
+    let add = 0
+    if (!ed.previous) { // doc created
+        add = 1
+    } else if (!ed.exists) { // doc deleted
+        add = -1
+    }
+
+    if (add) {
+        db.runTransaction(async t => {
+            const doc = await t.get(docRef)
+            t.update(docRef, {  })
+        })
+    }
+}
+
 exports.generateFSReport = async shouldSave => {
     console.log('Generating firestore report.')
     const counts = {}
@@ -147,8 +164,8 @@ exports.generateFSReport = async shouldSave => {
     await Promise.all(promises)
 
     const info = {
-        [vars.FS_INFO_TIME]: new Date(),
-        [vars.FS_INFO_FIRESTORE_OBJECT_COUNTS]: counts
+        [vars.FS_INFO_ADMIN_REPORT]: new Date(),
+        [vars.FS_AR_FIRESTORE_OBJECT_COUNTS]: counts
     }
 
     if (shouldSave) {

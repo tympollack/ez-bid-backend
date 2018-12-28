@@ -16,6 +16,18 @@ exports.fsGetDocById = (db, collection, id) => {
     })
 }
 
+exports.roundTo = (n, digits = 0) => {
+    let negative = false
+    if (n < 0) {
+        negative = true
+        n *= -1
+    }
+    const multiplier = Math.pow(10, digits)
+    n = parseFloat((n * multiplier).toFixed(11))
+    n = (Math.round(n) / multiplier).toFixed(digits)
+    return negative ? (n * -1).toFixed(digits): n
+}
+
 exports.pluralize = (noun, count) => {
     return count === 1 ? noun : (noun + 's')
 }
