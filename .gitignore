@@ -19,3 +19,7 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw*
+functions/haxm_silent_run.log
+functions/config/.env.yml
+functions/firebase-debug.log
+functions/image.png
