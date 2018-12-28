@@ -65,6 +65,25 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
+    const collRef = await db.collection(vars.FS_COLLECTIONS_ITEMS.name)
+    const snapRef = await collRef.get()
+
+    const promises = []
+    let ret = 0
+    snapRef.forEach(doc => {
+        const d = doc.data()
+        promises.push(new Promise(async resolve => {
+            const currentBid = d[vars.FS_ITEM_CURRENT_BID]
+            const currentBidder = (d[vars.FS_ITEM_BIDS].find(bid => bid.bidAmount === currentBid) || {})[vars.FS_BID_BIDDER_ID]
+            if (currentBidder) {
+                await collRef.doc(doc.id).update({ [vars.FS_ITEM_CURRENT_BIDDER]: currentBidder })
+                ret++
+            }
+            resolve()
+        }))
+    })
+    await Promise.all(promises)
+    res.send(`${ret} records altered`)
 }
 
 
