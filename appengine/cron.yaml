@@ -9,4 +9,4 @@ cron:
 
 - description: Generate admin report.
   url: /publish/generate-admin-report
-  schedule: every day 00:00
+  schedule: every day 05:00

@@ -120,10 +120,8 @@ exports.addBids = async bidInfos => {
 
 exports.countFSObjects = async collectionName => {
     if (!collectionName) return Promise.reject('Need collection name.')
-    const refs = await db.collection(collectionName).get()
-    let amt = 0
-    refs.forEach(() => { amt++ })
-    return amt
+    const snap = await db.collection(collectionName).get()
+    return snap.size
 }
 
 exports.generateFSReport = async shouldSave => {

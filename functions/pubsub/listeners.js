@@ -11,7 +11,7 @@ exports.findNewItems = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(vars.
     return psFuncs.findNewItems()
 })
 
-exports.generateAdminReport = functions.pubsub.topic(vars.PS_TOPICS.generateAdminReport).onPublish(() => {
+exports.generateAdminReport = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(vars.PS_TOPICS.generateAdminReport).onPublish(() => {
     console.log('Processing queue:', vars.PS_TOPICS.generateAdminReport)
     return psFuncs.generateAdminReport()
 })
