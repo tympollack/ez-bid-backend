@@ -106,14 +106,11 @@ exports.addItems = async itemInfos => {
 exports.addBids = async bidInfos => {
     if (!bidInfos.length) return Promise.reject('No bids to add.')
     const collRef = db.collection(vars.FS_COLLECTIONS_BIDS.name)
-    const docRefs = []
-    bidInfos.forEach(() => {
-        docRefs.push(collRef.doc())
-    })
-
     const batch = db.batch()
-    bidInfos.forEach((info, idx) => {
-        batch.set(docRefs[idx], info)
+    bidInfos.forEach(info => {
+        const docId = `${info[vars.FS_BID_ITEM_ID]}_${info[vars.FS_BID_BIDDER_ID]}_${info[vars.FS_BID_AMOUNT]}`
+        const docRef = collRef.doc(docId)
+        batch.set(docRef, info)
     })
     return await batch.commit()
 }
@@ -122,23 +119,6 @@ exports.countFSObjects = async collectionName => {
     if (!collectionName) return Promise.reject('Need collection name.')
     const snap = await db.collection(collectionName).get()
     return snap.size
-}
-
-exports.documentWriteCounter = async event => {
-    const ed = event.data
-    let add = 0
-    if (!ed.previous) { // doc created
-        add = 1
-    } else if (!ed.exists) { // doc deleted
-        add = -1
-    }
-
-    if (add) {
-        db.runTransaction(async t => {
-            const doc = await t.get(docRef)
-            t.update(docRef, {  })
-        })
-    }
 }
 
 exports.generateFSReport = async shouldSave => {

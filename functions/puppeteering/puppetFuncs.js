@@ -259,7 +259,7 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
                                         const tds = tr.childNodes
                                         if (tds.length === 3) data.push({
                                                 bidderId: tds[0].textContent,
-                                                bidAmount: tds[1].textContent.replace('$ ', ''),
+                                                bidAmount: parseFloat(tds[1].textContent.replace('$ ', '')),
                                                 bidDate: tds[2].textContent
                                             })
                                     })
@@ -328,7 +328,8 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
         const currentBid = info[vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name]
         const currentBidder = (bids.find(bid => bid.bidAmount === currentBid) || {}).bidderId
 
-        addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_CURRENT_BID, currentBid)
+        if (currentBid) sanInfo[vars.FS_ITEM_CURRENT_BID] = parseFloat(currentBid)
+
         addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_CURRENT_BIDDER, currentBidder)
         addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_NEXT_BID, info[vars.PUP_SEL_ITEM_DETAILS_NEXT_BID.name])
         addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_STATUS, info[vars.PUP_SEL_ITEM_DETAILS_STATUS.name])

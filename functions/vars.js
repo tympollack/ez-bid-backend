@@ -84,6 +84,15 @@ exports.FS_AR_AVERAGE_BID = this.FS_INFO_ADMIN_REPORT.averageBid
 exports.FS_AR_TOTAL_BID_AMOUNT = this.FS_INFO_ADMIN_REPORT.totalBidAmount
 exports.FS_AR_TIME = this.FS_INFO_ADMIN_REPORT.time
 
+exports.FS_IT_BAD_AUCTION_NUM = this.FS_INFO_TYPES.badAuctionNum
+exports.FS_IT_DAILY_ADMIN_REPORT = this.FS_INFO_TYPES.dailyAdminReport
+exports.FS_IT_AUCTION_STATS = this.FS_INFO_TYPES.auctionStats
+exports.FS_IT_BID_STATS = this.FS_INFO_TYPES.bidStats
+exports.FS_IT_ITEM_STATS = this.FS_INFO_TYPES.itemStats
+exports.FS_IT_LOCATION_STATS = this.FS_INFO_TYPES.locationStats
+exports.FS_IT_USER_STATS = this.FS_INFO_TYPES.userStats
+exports.FS_IT_PROG_MOD_CONFIG = this.FS_INFO_TYPES.progModConfig
+
 exports.FS_PMC_MINUTES_AGO = this.FS_INFO_PROG_MOD_CONFIG.baseMinutesAgo.name
 
 exports.FS_ITEM_ADD_DATE = this.FS_FIELDS_ITEM.addDate.name

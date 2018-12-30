@@ -2,76 +2,54 @@ const fsFuncs = require('./firestore/fsFuncs')
 const { db, functions, utils, vars } = module.parent.shareable
 const firestore = functions.firestore
 
-// can also use (snap, context)
+const collRef = db.collection(vars.FS_COLLECTIONS_INFO.name)
 
 exports.onAuctionCreated = firestore
     .document(vars.FS_COLLECTIONS_AUCTIONS.id.path)
-    .onCreate(async snap => {
+    .onCreate((snap, context) => {
         console.log('new auction: ', snap.id)
 
-        const auction = snap.data()
-        const auctionId = auction[vars.FS_AUCTION_AUCTION_NUMBER]
-
-        try {
-            await runAdminReportTransaction(adminData => {
-                const newCount = (adminData[vars.FS_AR_AUCTION_COUNT] || 0) + 1
-                return { [vars.FS_AR_AUCTION_COUNT]: newCount }
-            })
-            console.log('auction transaction succeeded', auctionId)
-        } catch (e) {
-            console.error('auction transaction failed', auctionId, e)
-        }
-
-        // try {
-        //     await db.runTransaction(t => {
-        //         const adminDocRef = getAdminReportDocRef()
-        //         return t.get(adminDocRef).then(adminDoc => {
-        //             const adminData = adminDoc.data() || {}
-        //             const newCount = (adminData[vars.FS_AR_AUCTION_COUNT] || 0) + 1
-        //             t.update(adminDocRef, { [vars.FS_AR_AUCTION_COUNT]: newCount })
-        //         })
-        //     })
-        //     console.log('auction transaction succeeded', auctionId)
-        // } catch (e) {
-        //     console.error('auction transaction failed', auctionId, e)
-        // }
-
-        return Promise.resolve()
+        return executeOnce(snap, context, t => {
+            const docRef = collRef.doc(vars.FS_IT_AUCTION_STATS)
+            return t
+                .get(docRef)
+                .then(data => {
+                    const newCount = (data[vars.FS_AR_AUCTION_COUNT] || 0) + 1
+                    t.update(docRef, { [vars.FS_AR_AUCTION_COUNT]: newCount })
+                })
+                .catch(e => { console.log('auction transaction failed:', e) })
+        })
     })
 
 exports.onBidCreated = firestore
     .document(vars.FS_COLLECTIONS_BIDS.id.path)
-    .onCreate(async snap => {
+    .onCreate((snap, context) => {
         console.log('new bid: ', snap.id)
 
         const bid = snap.data()
-        try {
-            await db.runTransaction(async t => {
-                const adminDocRef = getAdminReportDocRef()
-                return t.get(adminDocRef).then(adminDoc => {
-                    const adminData = adminDoc.data() || {}
-                    const newCount = (adminData[vars.FS_AR_BID_COUNT] || 0) + 1
-                    const newTotalBid = (adminData[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT]
-                    const newAvgBid = utils.roundTo(newTotalBid / newCount, 2)
-                    return t.update(getAdminReportDocRef(), {
+
+        return executeOnce(snap, context, t => {
+            const docRef = collRef.doc(vars.FS_IT_BID_STATS)
+            return t
+                .get(docRef)
+                .then(data => {
+                    const newCount = (data[vars.FS_AR_BID_COUNT] || 0) + 1
+                    const newTotalBid = (data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT]
+                    const newAvgBid = parseInt(utils.roundTo(newTotalBid / newCount, 2))
+                    t.update(docRef, {
                         [vars.FS_AR_AVERAGE_BID]: newAvgBid,
                         [vars.FS_AR_BID_COUNT]: newCount,
                         [vars.FS_AR_TOTAL_BID_AMOUNT]: newTotalBid
                     })
                 })
-            })
-            console.log('bid transaction succeeded', snap.id)
-        } catch (e) {
-            console.error('bid transaction failed', e)
-        }
-
-        return Promise.resolve()
+                .catch(e => { console.log('bid transaction failed:', e) })
+        })
     })
 
 
 exports.onItemCreated = firestore
     .document(vars.FS_COLLECTIONS_ITEMS.id.path)
-    .onCreate(async snap => {
+    .onCreate(async (snap, context) => {
         console.log('new item: ', snap.id)
 
         const item = snap.data()
@@ -89,21 +67,6 @@ exports.onItemCreated = firestore
             })
         })
 
-
-        try {
-            await db.runTransaction(t => {
-                const adminDocRef = getAdminReportDocRef()
-                return t.get(adminDocRef).then(adminDoc => {
-                    const adminData = adminDoc.data() || {}
-                    const newCount = (adminData[vars.FS_AR_ITEM_COUNT] || 0) + 1
-                    t.update(adminDocRef, { [vars.FS_AR_ITEM_COUNT]: newCount })
-                })
-            })
-            console.log('item transaction succeeded', itemId)
-        } catch (e) {
-            console.error('item transaction failed', itemId, e)
-        }
-
         try {
             await fsFuncs.addBids(bidInfos)
             console.log('bids created for item', itemId)
@@ -111,7 +74,16 @@ exports.onItemCreated = firestore
             console.error('bid creation failed for item', itemId, e)
         }
 
-        return Promise.resolve()
+        return executeOnce(snap, context, t => {
+            const docRef = collRef.doc(vars.FS_IT_ITEM_STATS)
+            return t
+                .get(docRef)
+                .then(data => {
+                    const newCount = (data[vars.FS_AR_ITEM_COUNT] || 0) + 1
+                    t.update(docRef, { [vars.FS_AR_ITEM_COUNT]: newCount })
+                })
+                .catch(e => { console.log('item transaction failed:', e) })
+        })
 
         // todo - check if user is watching for new item or similar
     })
@@ -138,19 +110,12 @@ exports.onItemCreated = firestore
 
 /////////////////////////////////////////////////////////////////////
 
-function runAdminReportTransaction(func, errMsg) {
-    return new Promise((resolve, reject) => {
-        db.runTransaction(t => {
-            const adminDocRef = db.collection(vars.FS_COLLECTIONS_INFO.name).doc(vars.FS_INFO_TYPES.dailyAdminReport)
-            return t.get(adminDocRef).then(adminDoc => {
-                const adminData = adminDoc.data() || {}
-                const newObj = func(adminData)
-                t.update(adminDocRef, newObj)
-            })
-        }).then(resolve, reject)
-    })
-}
+function executeOnce(change, context, task) {
+    const eventRef = db.collection('events').doc(context.eventId);
 
-function getAdminReportDocRef() {
-    return db.collection(vars.FS_COLLECTIONS_INFO.name).doc(vars.FS_INFO_TYPES.dailyAdminReport)
+    return db.runTransaction(t =>
+        t.get(eventRef)
+            .then(docSnap => (docSnap.exists ? null : task(t)))
+            .then(() => t.set(eventRef, { processed: true }))
+    )
 }

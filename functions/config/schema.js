@@ -876,6 +876,31 @@ module.exports = {
                         default: 'DAILY_ADMIN_REPORT'
                     },
 
+                    auctionStats: {
+                        format: String,
+                        default: 'AUCTION_STATS'
+                    },
+
+                    bidStats: {
+                        format: String,
+                        default: 'BID_STATS'
+                    },
+
+                    itemStats: {
+                        format: String,
+                        default: 'ITEM_STATS'
+                    },
+
+                    locationStats: {
+                        format: String,
+                        default: 'LOCATION_STATS'
+                    },
+
+                    userStats: {
+                        format: String,
+                        default: 'USER_STATS'
+                    },
+
                     progModConfig: {
                         format: String,
                         default: 'PROGRAMATICALLY_MODDED_CONFIG'
@@ -906,7 +931,7 @@ module.exports = {
 
         findItemsAmount: {
             format: Number,
-            default: 6
+            default: 1
         },
 
         maxItemsPerPage: {
