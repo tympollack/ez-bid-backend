@@ -65,25 +65,25 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
-    const collRef = await db.collection(vars.FS_COLLECTIONS_ITEMS.name)
-    const snapRef = await collRef.get()
-
-    const promises = []
-    let ret = 0
-    snapRef.forEach(doc => {
-        const d = doc.data()
-        promises.push(new Promise(async resolve => {
-            const currentBid = d[vars.FS_ITEM_CURRENT_BID]
-            const currentBidder = (d[vars.FS_ITEM_BIDS].find(bid => bid.bidAmount === currentBid) || {})[vars.FS_BID_BIDDER_ID]
-            if (currentBidder) {
-                await collRef.doc(doc.id).update({ [vars.FS_ITEM_CURRENT_BIDDER]: currentBidder })
-                ret++
-            }
-            resolve()
-        }))
-    })
-    await Promise.all(promises)
-    res.send(`${ret} records altered`)
+    const collRef = db.collection('events')
+    const bidStatsRef = collRef.doc(vars.FS_IT_BID_STATS)
+    const itemStatsRef = collRef.doc(vars.FS_IT_ITEM_STATS)
+    db.runTransaction(t => {
+        t
+            .get(bidStatsRef)
+            .then(bidStatsSnap => {
+                t.update(bidStatsRef, {
+                    averageBid: 0,
+                    bidCount: 0,
+                    totalBidAmount: 0
+                })
+            })
+            // .get(itemStatsRef)
+            // .then(itemStatsSnap => {
+            //     t.update(itemStatsRef, { itemCount: 0 })
+            // })
+    }).then(() => { res.send('stats reset')})
+        .catch(e => { res.status(500).json(e) })
 }
 
 

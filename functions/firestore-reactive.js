@@ -33,9 +33,13 @@ exports.onBidCreated = firestore
             return t
                 .get(docRef)
                 .then(data => {
+                    const oldCount = data[vars.FS_AR_BID_COUNT] || 0
                     const newCount = (data[vars.FS_AR_BID_COUNT] || 0) + 1
+                    const oldTotalBid = data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0
                     const newTotalBid = (data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT]
                     const newAvgBid = parseInt(utils.roundTo(newTotalBid / newCount, 2))
+                    console.log(`updating bid count from ${oldCount} to ${newCount}`)
+                    console.log(`updating bid total from ${oldTotalBid} to ${newTotalBid} with new avg of ${newAvgBid}`)
                     t.update(docRef, {
                         [vars.FS_AR_AVERAGE_BID]: newAvgBid,
                         [vars.FS_AR_BID_COUNT]: newCount,
@@ -79,7 +83,9 @@ exports.onItemCreated = firestore
             return t
                 .get(docRef)
                 .then(data => {
-                    const newCount = (data[vars.FS_AR_ITEM_COUNT] || 0) + 1
+                    const oldCount = data[vars.FS_AR_ITEM_COUNT] || 0
+                    const newCount = oldCount + 1
+                    console.log(`updating item count from ${oldCount} to ${newCount}`)
                     t.update(docRef, { [vars.FS_AR_ITEM_COUNT]: newCount })
                 })
                 .catch(e => { console.log('item transaction failed:', e) })
@@ -116,6 +122,9 @@ function executeOnce(change, context, task) {
     return db.runTransaction(t =>
         t.get(eventRef)
             .then(docSnap => (docSnap.exists ? null : task(t)))
-            .then(() => t.set(eventRef, { processed: true }))
+            .then(() => t.set(eventRef, {
+                processed: true,
+                processDate: new Date()
+            }))
     )
 }
