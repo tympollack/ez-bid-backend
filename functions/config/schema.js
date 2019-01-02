@@ -345,6 +345,42 @@ module.exports = {
                 },
             },
 
+            events: {
+                name: {
+                    format: String,
+                    default: 'events'
+                },
+
+                id: {
+                    name: {
+                        format: String,
+                        default: 'id'
+                    },
+                    path: {
+                        format: String,
+                        default: 'events/{id}'
+                    }
+                },
+            },
+
+            dailyAdminReport: {
+                name: {
+                    format: String,
+                    default: 'DAILY_ADMIN_REPORT'
+                },
+
+                id: {
+                    name: {
+                        format: String,
+                        default: 'id'
+                    },
+                    path: {
+                        format: String,
+                        default: 'DAILY_ADMIN_REPORT/{id}'
+                    }
+                },
+            },
+
             items: {
                 name: {
                     format: String,
@@ -813,37 +849,47 @@ module.exports = {
                 },
 
                 adminReport: {
-                    firestoreObjectCounts: {
-                        name: {
-                            format: String,
-                            default: 'firestoreObjectCounts'
-                        },
-                        auctions: {
+                    auctions: {
+                        auctionCount: {
                             format: String,
                             default: 'auctionCount'
-                        },
-                        bids: {
+                        }
+                    },
+
+                    bids: {
+                        bidCount: {
                             format: String,
                             default: 'bidCount'
                         },
-                        items: {
+                        averageBid: {
+                            format: String,
+                            default: 'averageBid'
+                        },
+                        totalBidAmount: {
+                            format: String,
+                            default: 'totalBidAmount'
+                        },
+                    },
+
+                    items: {
+                        itemCount: {
                             format: String,
                             default: 'itemCount'
-                        },
-                        users: {
+                        }
+                    },
+
+                    locations: {
+                        locationCount: {
+                            format: String,
+                            default: 'locationCount'
+                        }
+                    },
+
+                    users: {
+                        userCount: {
                             format: String,
                             default: 'userCount'
-                        },
-                    },
-
-                    averageBid: {
-                        format: String,
-                        default: 'averageBid'
-                    },
-
-                    totalBidAmount: {
-                        format: String,
-                        default: 'totalBidAmount'
+                        }
                     },
 
                     time: {
@@ -931,7 +977,7 @@ module.exports = {
 
         findItemsAmount: {
             format: Number,
-            default: 1
+            default: 6
         },
 
         maxItemsPerPage: {

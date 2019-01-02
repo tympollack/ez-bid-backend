@@ -8,6 +8,9 @@ const routes = require('express').Router()
 routes.post('/badAuctionNumDedupe', badAuctionNumDedupe)
 
 routes.get('/countFirestoreObjects', countFirestoreObjects)
+routes.get('/clearStats', clearStats)
+routes.get('/deleteCollections', deleteCollections)
+routes.get('/generateStats', clearStats)
 routes.get('/generateAdminSnapshot', generateAdminSnapshot)
 
 routes.get('/findNewAuctions', findNewAuctions)
@@ -65,27 +68,35 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
-    const collRef = db.collection('events')
-    const bidStatsRef = collRef.doc(vars.FS_IT_BID_STATS)
-    const itemStatsRef = collRef.doc(vars.FS_IT_ITEM_STATS)
-    db.runTransaction(t => {
-        t
-            .get(bidStatsRef)
-            .then(bidStatsSnap => {
-                t.update(bidStatsRef, {
-                    averageBid: 0,
-                    bidCount: 0,
-                    totalBidAmount: 0
-                })
-            })
-            // .get(itemStatsRef)
-            // .then(itemStatsSnap => {
-            //     t.update(itemStatsRef, { itemCount: 0 })
-            // })
-    }).then(() => { res.send('stats reset')})
-        .catch(e => { res.status(500).json(e) })
+
 }
 
+async function generateStats(req, res) {
+
+}
+
+async function clearStats(req, res) {
+    const statDocIds = req.query.statDocIds ? JSON.parse(req.query.statDocIds) : []
+    const deleteExistingReports = req.query.deleteExistingReports ? JSON.parse(req.query.deleteExistingReports) : false
+
+    try {
+        await fsFuncs.clearStats(statDocIds, deleteExistingReports)
+        res.send('stats reset')
+    } catch (e) {
+        res.status(500).json(e)
+    }
+}
+
+async function deleteCollections(req, res) {
+    const collections = req.query.collections ? JSON.parse(req.query.collections) : []
+
+    try {
+        await fsFuncs.deleteCollections(collections)
+        res.send('stats reset')
+    } catch (e) {
+        res.status(500).json(e)
+    }
+}
 
 async function countFirestoreObjects(req, res) {
     const collectionName = req.query.collection

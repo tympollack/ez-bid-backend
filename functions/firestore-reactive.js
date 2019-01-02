@@ -13,7 +13,8 @@ exports.onAuctionCreated = firestore
             const docRef = collRef.doc(vars.FS_IT_AUCTION_STATS)
             return t
                 .get(docRef)
-                .then(data => {
+                .then(doc => {
+                    const data = doc.data()
                     const newCount = (data[vars.FS_AR_AUCTION_COUNT] || 0) + 1
                     t.update(docRef, { [vars.FS_AR_AUCTION_COUNT]: newCount })
                 })
@@ -32,14 +33,11 @@ exports.onBidCreated = firestore
             const docRef = collRef.doc(vars.FS_IT_BID_STATS)
             return t
                 .get(docRef)
-                .then(data => {
-                    const oldCount = data[vars.FS_AR_BID_COUNT] || 0
+                .then(doc => {
+                    const data = doc.data()
                     const newCount = (data[vars.FS_AR_BID_COUNT] || 0) + 1
-                    const oldTotalBid = data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0
-                    const newTotalBid = (data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT]
-                    const newAvgBid = parseInt(utils.roundTo(newTotalBid / newCount, 2))
-                    console.log(`updating bid count from ${oldCount} to ${newCount}`)
-                    console.log(`updating bid total from ${oldTotalBid} to ${newTotalBid} with new avg of ${newAvgBid}`)
+                    const newTotalBid = utils.roundTo((data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT], 2)
+                    const newAvgBid = utils.roundTo(newTotalBid / newCount, 2)
                     t.update(docRef, {
                         [vars.FS_AR_AVERAGE_BID]: newAvgBid,
                         [vars.FS_AR_BID_COUNT]: newCount,
@@ -82,7 +80,8 @@ exports.onItemCreated = firestore
             const docRef = collRef.doc(vars.FS_IT_ITEM_STATS)
             return t
                 .get(docRef)
-                .then(data => {
+                .then(doc => {
+                    const data = doc.data()
                     const oldCount = data[vars.FS_AR_ITEM_COUNT] || 0
                     const newCount = oldCount + 1
                     console.log(`updating item count from ${oldCount} to ${newCount}`)
@@ -94,31 +93,48 @@ exports.onItemCreated = firestore
         // todo - check if user is watching for new item or similar
     })
 
-// exports.onLocationCreated = firestore
-//     .document(collections.locations.fields.id.path)
-//     .onCreate((snap, context) => {
-//         const newValue = snap.data()
-//         console.log('new location: ', newValue)
-//         // todo - notify users if a new location is in their area
-//     })
+exports.onLocationCreated = firestore
+    .document(vars.FS_COLLECTIONS_LOCATIONS.id.path)
+    .onCreate((snap, context) => {
+        console.log('new location: ', snap.id)
 
-// exports.onUserCreated = firestore
-//     .document(vars.FS_COLLECTIONS_USERS.id.path)
-//     .onCreate(async snap => {
-//         console.log('new user: ', snap.id)
-//
-//         db.runTransaction(async t => {
-//             const adminData = await getAdminReportData()
-//             const newCount = adminData[vars.FS_AR_USER_COUNT] + 1
-//             return t.update(getAdminReportDocRef(), { [vars.FS_AR_USER_COUNT]: newCount })
-//         })
-//     })
+        return executeOnce(snap, context, t => {
+            const docRef = collRef.doc(vars.FS_IT_LOCATION_STATS)
+            return t
+                .get(docRef)
+                .then(doc => {
+                    const data = doc.data()
+                    const newCount = (data[vars.FS_AR_LOCATION_COUNT] || 0) + 1
+                    t.update(docRef, { [vars.FS_AR_LOCATION_COUNT]: newCount })
+                })
+                .catch(e => { console.log('auction transaction failed:', e) })
+        })
+
+        // todo - notify users if a new location is in their area
+    })
+
+exports.onUserCreated = firestore
+    .document(vars.FS_COLLECTIONS_USERS.id.path)
+    .onCreate((snap, context) => {
+        console.log('new user: ', snap.id)
+
+        return executeOnce(snap, context, t => {
+            const docRef = collRef.doc(vars.FS_IT_USER_STATS)
+            return t
+                .get(docRef)
+                .then(doc => {
+                    const data = doc.data()
+                    const newCount = (data[vars.FS_AR_USER_COUNT] || 0) + 1
+                    t.update(docRef, { [vars.FS_AR_USER_COUNT]: newCount })
+                })
+                .catch(e => { console.log('auction transaction failed:', e) })
+        })
+    })
 
 /////////////////////////////////////////////////////////////////////
 
 function executeOnce(change, context, task) {
-    const eventRef = db.collection('events').doc(context.eventId);
-
+    const eventRef = db.collection(vars.FS_COLLECTIONS_EVENTS.name).doc(context.eventId)
     return db.runTransaction(t =>
         t.get(eventRef)
             .then(docSnap => (docSnap.exists ? null : task(t)))

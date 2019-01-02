@@ -16,6 +16,12 @@ exports.fsGetDocById = (db, collection, id) => {
     })
 }
 
+exports.newPromise = promise => {
+    return new Promise((resolve, reject) => {
+        promise().then(() => { resolve() }, e => { reject(e) })
+    })
+}
+
 exports.roundTo = (n, digits = 0) => {
     let negative = false
     if (n < 0) {
@@ -24,8 +30,9 @@ exports.roundTo = (n, digits = 0) => {
     }
     const multiplier = Math.pow(10, digits)
     n = parseFloat((n * multiplier).toFixed(11))
-    n = (Math.round(n) / multiplier).toFixed(digits)
-    return negative ? (n * -1).toFixed(digits): n
+    n = (Math.round(n) / multiplier).toFixed(2)
+    n = negative ? (n * -1).toFixed(digits) : n
+    return parseFloat(n)
 }
 
 exports.pluralize = (noun, count) => {

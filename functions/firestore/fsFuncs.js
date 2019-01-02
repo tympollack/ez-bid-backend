@@ -1,4 +1,5 @@
 const db = require('../firestore/init')
+const utils = require('../utils')
 const vars = require('../vars')
 
 exports.fsGetObjectById = async (collectionName, id) => {
@@ -106,6 +107,11 @@ exports.addItems = async itemInfos => {
 exports.addBids = async bidInfos => {
     if (!bidInfos.length) return Promise.reject('No bids to add.')
     const collRef = db.collection(vars.FS_COLLECTIONS_BIDS.name)
+    // bidInfos.forEach(info => {
+    //     const docId = `${info[vars.FS_BID_ITEM_ID]}_${info[vars.FS_BID_BIDDER_ID]}_${info[vars.FS_BID_AMOUNT]}`
+    //     collRef.doc(docId).set(info)
+    // })
+
     const batch = db.batch()
     bidInfos.forEach(info => {
         const docId = `${info[vars.FS_BID_ITEM_ID]}_${info[vars.FS_BID_BIDDER_ID]}_${info[vars.FS_BID_AMOUNT]}`
@@ -123,34 +129,123 @@ exports.countFSObjects = async collectionName => {
 
 exports.generateFSReport = async shouldSave => {
     console.log('Generating firestore report.')
-    const counts = {}
-    const collections = [
-        vars.FS_COLLECTIONS_AUCTIONS,
-        vars.FS_COLLECTIONS_BIDS,
-        vars.FS_COLLECTIONS_ITEMS,
-        vars.FS_COLLECTIONS_USERS
-    ]
 
     const promises = []
-    collections.forEach(collection => {
+    let info = { [vars.FS_AR_TIME]: new Date() }
+    const collName = vars.FS_COLLECTIONS_INFO.name
+    vars.FS_INFO_TYPES.forEach(docId => {
+        if (docId.indexOf('_STATS') === -1) return
+
         promises.push(new Promise(async resolve => {
-            const collectionName = collection.name
-            const count = await this.countFSObjects(collectionName)
-            counts[collectionName] = count
-            console.log(`${count} ${collectionName} reported`)
+            const statsObj = await this.fsGetObjectById(collName, docId)
+            info = { ...info, ...statsObj }
             resolve()
         }))
     })
     await Promise.all(promises)
-
-    const info = {
-        [vars.FS_INFO_ADMIN_REPORT]: new Date(),
-        [vars.FS_AR_FIRESTORE_OBJECT_COUNTS]: counts
-    }
 
     if (shouldSave) {
         const doc = await this.fsGetDocById(vars.FS_COLLECTIONS_INFO.name, vars.FS_INFO_TYPES.dailyAdminReport)
         await doc.collection(vars.FS_INFO_TYPES.dailyAdminReport).add(info)
     }
     return info
+}
+
+exports.deleteCollection = async (collectionName, ownerDoc) => {
+    const collRef = (ownerDoc || db).collection(collectionName)
+    const snap = await collRef.get()
+
+    const promises = []
+    snap.forEach(doc => {
+        promises.push(utils.newPromise(() => { return collRef.doc(doc.id).delete() }))
+    })
+    return await Promise.all(promises)
+}
+
+exports.deleteCollections = async (collectionNames, ownerDoc) => {
+    const promises = []
+    collectionNames.forEach(collectionName => {
+        promises.push(utils.newPromise(() => {
+            return this.deleteCollection(collectionName, ownerDoc)
+                .then(() => { console.log(`collection ${collectionName} cleared`) })
+        }))
+    })
+    return await Promise.all(promises)
+}
+
+exports.clearStats = async (statDocIds, deleteExistingReports) => {
+    const infoCollRef = db.collection(vars.FS_COLLECTIONS_INFO.name)
+    const promises = []
+
+    if (deleteExistingReports)
+        promises.push(utils.newPromise(async () => {
+            const doc = await this.fsGetDocById(vars.FS_COLLECTIONS_INFO.name, vars.FS_IT_DAILY_ADMIN_REPORT)
+            return this.deleteCollection(vars.FS_COLLECTIONS_DAILY_ADMIN_REPORT.name, doc)
+                .then(() => { console.log('existing admin reports removed') })
+        }))
+
+    statDocIds.forEach(statDocId => {
+        switch (statDocId) {
+            case vars.FS_IT_AUCTION_STATS:
+                promises.push(utils.newPromise(() => {
+                    return infoCollRef
+                        .doc(vars.FS_IT_AUCTION_STATS)
+                        .update({[vars.FS_AR_AUCTION_COUNT]: 0})
+                        .then(() => {
+                            console.log(statDocId, 'reset')
+                        })
+                }))
+                break
+
+            case vars.FS_IT_BID_STATS:
+                promises.push(utils.newPromise(() => {
+                    return infoCollRef
+                        .doc(vars.FS_IT_BID_STATS)
+                        .update({
+                            [vars.FS_AR_BID_COUNT]: 0,
+                            [vars.FS_AR_AVERAGE_BID]: 0,
+                            [vars.FS_AR_TOTAL_BID_AMOUNT]: 0
+                        })
+                        .then(() => {
+                            console.log(statDocId, 'reset')
+                        })
+                }))
+                break
+
+            case vars.FS_IT_ITEM_STATS:
+                promises.push(utils.newPromise(() => {
+                    return infoCollRef
+                        .doc(vars.FS_IT_ITEM_STATS)
+                        .update({[vars.FS_AR_ITEM_COUNT]: 0})
+                        .then(() => {
+                            console.log(statDocId, 'reset')
+                        })
+                }))
+                break
+
+            case vars.FS_IT_LOCATION_STATS:
+                promises.push(utils.newPromise(() => {
+                    return infoCollRef
+                        .doc(vars.FS_IT_LOCATION_STATS)
+                        .update({[vars.FS_AR_LOCATION_COUNT]: 0})
+                        .then(() => {
+                            console.log(statDocId, 'reset')
+                        })
+                }))
+                break
+
+            case vars.FS_IT_USER_STATS:
+                promises.push(utils.newPromise(() => {
+                    return infoCollRef
+                        .doc(vars.FS_IT_USER_STATS)
+                        .update({[vars.FS_AR_USER_COUNT]: 0})
+                        .then(() => {
+                            console.log(statDocId, 'reset')
+                        })
+                }))
+                break
+        }
+    })
+
+    return await Promise.all(promises)
 }
