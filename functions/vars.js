@@ -2,6 +2,9 @@ const config = require('./config/config').get()
 
 exports.CONFIG_BID_API_URLS = config.bidApiUrls
 
+exports.APIS = config.apis
+exports.API_GOOGLE_MAPS_KEY = this.APIS.google.maps.key
+
 exports.BID_AUCTION_DETAILS_BASE = this.CONFIG_BID_API_URLS.auctionDetails
 exports.BID_AUCTION_DETAILS_URL = this.BID_AUCTION_DETAILS_BASE.url
 exports.BID_AUCTION_DETAILS_PARAMS = this.BID_AUCTION_DETAILS_BASE.params
@@ -49,6 +52,7 @@ exports.FS_FIELDS_AUCTION = this.FS_COLLECTIONS_AUCTIONS.fields
 exports.FS_FIELDS_BID = this.FS_COLLECTIONS_BIDS.fields
 exports.FS_FIELDS_INFO = this.FS_COLLECTIONS_INFO.fields
 exports.FS_FIELDS_ITEM = this.FS_COLLECTIONS_ITEMS.fields
+exports.FS_FIELDS_LOCATION = this.FS_COLLECTIONS_LOCATIONS.fields
 exports.FS_FIELDS_USER = this.FS_COLLECTIONS_USERS.fields
 exports.FS_FIELDS_USER_SESSION = this.FS_FIELDS_USER.session.fields
 
@@ -78,6 +82,7 @@ exports.FS_INFO_PROG_MOD_CONFIG = this.FS_COLLECTIONS_INFO.progModConfig
 
 exports.FS_AR_AUCTIONS = this.FS_INFO_ADMIN_REPORT.auctions
 exports.FS_AR_AUCTION_COUNT = this.FS_AR_AUCTIONS.auctionCount
+exports.FS_AR_FAILED_GEOCODING = this.FS_AR_AUCTIONS.failedGeocoding
 
 exports.FS_AR_BIDS = this.FS_INFO_ADMIN_REPORT.bids
 exports.FS_AR_AVERAGE_BID = this.FS_AR_BIDS.averageBid
@@ -128,6 +133,8 @@ exports.FS_ITEM_STATUS = this.FS_FIELDS_ITEM.status.name
 exports.FS_ITEM_STATUS_ADDITIONAL = this.FS_FIELDS_ITEM.statusAdditional.name
 exports.FS_ITEM_TITLE = this.FS_FIELDS_ITEM.title.name
 exports.FS_ITEM_UPDATED_DATE = this.FS_FIELDS_ITEM.updatedDate.name
+
+exports.FS_LOC_FTA_ADDRESS = this.FS_FIELDS_LOCATION.ftaAddress.name
 
 exports.FS_USER_BIDNUM = this.FS_FIELDS_USER.bidnum.name
 exports.FS_USER_BIDPW = this.FS_FIELDS_USER.bidpw.name

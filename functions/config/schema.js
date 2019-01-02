@@ -6,6 +6,17 @@ module.exports = {
         env: 'NODE_ENV'
     },
 
+    apis: {
+        google: {
+            maps: {
+                key: {
+                    format: String,
+                    default: ''
+                }
+            }
+        }
+    },
+
     firebase: {
         projectId: {
             doc: 'ID of the project.',
@@ -692,6 +703,39 @@ module.exports = {
                             default: 'locations/{locationId}'
                         }
                     },
+
+                    ftaAddress: {
+                        name: {
+                            format: String,
+                            default: 'ftaAddress'
+                        },
+                        path: {
+                            format: String,
+                            default: 'locations/{ftaAddress}'
+                        }
+                    },
+
+                    lat: {
+                        name: {
+                            format: String,
+                            default: 'lat'
+                        },
+                        path: {
+                            format: String,
+                            default: 'locations/{lat}'
+                        }
+                    },
+
+                    lon: {
+                        name: {
+                            format: String,
+                            default: 'lon'
+                        },
+                        path: {
+                            format: String,
+                            default: 'locations/{lon}'
+                        }
+                    },
                 }
             },
 
@@ -853,7 +897,11 @@ module.exports = {
                         auctionCount: {
                             format: String,
                             default: 'auctionCount'
-                        }
+                        },
+                        failedGeocoding: {
+                            format: String,
+                            default: 'failedGeocoding'
+                        },
                     },
 
                     bids: {
@@ -1319,7 +1367,7 @@ module.exports = {
                     },
                     selector: {
                         format: String,
-                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Title"]'
+                        default: '#content-holder > div.product-detail-holder > div.itemDetail-Block div.right-box > div > strong[data-original-title="Title of item"]'
                     }
                 },
             }

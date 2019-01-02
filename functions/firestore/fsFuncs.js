@@ -131,14 +131,14 @@ exports.generateFSReport = async shouldSave => {
     console.log('Generating firestore report.')
 
     const promises = []
-    let info = { [vars.FS_AR_TIME]: new Date() }
+    const info = { [vars.FS_AR_TIME]: new Date() }
     const collName = vars.FS_COLLECTIONS_INFO.name
-    vars.FS_INFO_TYPES.forEach(docId => {
+    Object.values(vars.FS_INFO_TYPES).forEach(docId => {
         if (docId.indexOf('_STATS') === -1) return
 
         promises.push(new Promise(async resolve => {
             const statsObj = await this.fsGetObjectById(collName, docId)
-            info = { ...info, ...statsObj }
+            info[docId] = statsObj
             resolve()
         }))
     })
@@ -190,7 +190,10 @@ exports.clearStats = async (statDocIds, deleteExistingReports) => {
                 promises.push(utils.newPromise(() => {
                     return infoCollRef
                         .doc(vars.FS_IT_AUCTION_STATS)
-                        .update({[vars.FS_AR_AUCTION_COUNT]: 0})
+                        .update({
+                            [vars.FS_AR_AUCTION_COUNT]: 0,
+                            [vars.FS_AR_FAILED_GEOCODING]: []
+                        })
                         .then(() => {
                             console.log(statDocId, 'reset')
                         })

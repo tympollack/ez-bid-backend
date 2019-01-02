@@ -1,5 +1,7 @@
 const vars = require('./vars')
 const cloudTasks = require('@google-cloud/tasks')
+const crypto = require('crypto')
+const gmc = require('./googleMapsClient')
 
 // @deprecated
 exports.fsGetObjectById = (db, collection, id) => {
@@ -14,6 +16,14 @@ exports.fsGetDocById = (db, collection, id) => {
     return new Promise(async resolve => {
         resolve(await db.collection(collection).doc(id))
     })
+}
+
+exports.geocodeAddress = address => {
+    return gmc.geocode({ address: address }).asPromise()
+}
+
+exports.quickHash = data => {
+    return crypto.createHash('sha1').update(data).digest('base64')
 }
 
 exports.newPromise = promise => {

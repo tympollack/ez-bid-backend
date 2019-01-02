@@ -1,5 +1,6 @@
 const fsFuncs = require('../firestore/fsFuncs')
 const psFuncs = require('../pubsub/psFuncs')
+const utils = require('../utils')
 const { db, vars} = module.parent.shareable
 
 //    /admin/
@@ -10,8 +11,10 @@ routes.post('/badAuctionNumDedupe', badAuctionNumDedupe)
 routes.get('/countFirestoreObjects', countFirestoreObjects)
 routes.get('/clearStats', clearStats)
 routes.get('/deleteCollections', deleteCollections)
-routes.get('/generateStats', clearStats)
+routes.get('/generateStats', generateStats)
 routes.get('/generateAdminSnapshot', generateAdminSnapshot)
+
+routes.get('/geocodeAddress', geocodeAddress)
 
 routes.get('/findNewAuctions', findNewAuctions)
 routes.get('/findNewItems', findNewItems)
@@ -19,6 +22,8 @@ routes.get('/findNewItems', findNewItems)
 routes.get('/test', test)
 routes.get('/otherTest', otherTest)
 routes.get('/testFindAuctions', testFindAuctions)
+
+routes.get('/initLocationCollection', initLocationCollection)
 
 module.exports = routes
 
@@ -71,8 +76,25 @@ async function test(req, res) {
 
 }
 
-async function generateStats(req, res) {
+async function geocodeAddress(req, res) {
+    const address = req.query.address
+    try {
+        const resp = await utils.geocodeAddress(address)
+        res.json(resp.json)
+    } catch (e) {
+        res.json(e.message)
+    }
+}
 
+async function generateStats(req, res) {
+    const shouldSave = req.query.save
+    try {
+        const info = await fsFuncs.generateFSReport(shouldSave)
+        res.json(info)
+    } catch(e) {
+        console.log(e)
+        res.status(500).send(e)
+    }
 }
 
 async function clearStats(req, res) {
@@ -184,6 +206,45 @@ async function testFindAuctions(req, res) {
     ret.badNumbers.sort()
 
     res.status(200).json(ret)
+}
+
+/////////////////////////////////////////////////////////////////////
+
+async function initLocationCollection(req, res) {
+    const promises = []
+    const locCollRef = db.collection(vars.FS_COLLECTIONS_LOCATIONS.name)
+    const locations = await locCollRef.get()
+    const locAddresses = []
+
+    locations.forEach(locDoc => {
+        locAddresses.push(locDoc.data()[vars.FS_LOC_FTA_ADDRESS])
+    })
+
+    const auctions = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).get()
+
+    auctions.forEach(auctionDoc => {
+        const auction = auctionDoc.data()
+        const auctionAddress = auction[vars.FS_AUCTION_LOCATION_ADDRESS]
+
+        if (locAddresses.indexOf(auctionAddress) === -1) {
+            locAddresses.push(auctionAddress)
+            promises.push(utils.newPromise(async () => {
+                const resp = await utils.geocodeAddress(auctionAddress)
+                const results = resp.json.results[0]
+                const locId = results.place_id
+
+                await locCollRef
+                    .doc(locId)
+                    .set({
+                        [vars.FS_LOC_FTA_ADDRESS]: auctionAddress,
+                        ...results
+                    })
+            }))
+        }
+    })
+
+    await Promise.all(promises)
+    res.send('ok')
 }
 
 /////////////////////////////////////////////////////////////////////

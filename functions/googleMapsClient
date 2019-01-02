@@ -1,0 +1,5 @@
+const vars = require('./vars')
+module.exports = require('@google/maps').createClient({
+    key: vars.API_GOOGLE_MAPS_KEY,
+    Promise: Promise
+})
