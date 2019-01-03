@@ -252,3 +252,105 @@ exports.clearStats = async (statDocIds, deleteExistingReports) => {
 
     return await Promise.all(promises)
 }
+
+exports.resetAuctionsNotYetFullyCrawled = async () => {
+    const auctionCollRef = db.collection(vars.FS_COLLECTIONS_AUCTIONS.name)
+    const auctionRefs = await auctionCollRef
+        .where(vars.FS_AUCTION_ITEMS_CRAWLED, '==', true)
+        .get()
+
+    const auctionsWithTooFewItems = []
+    auctionRefs.forEach(doc => {
+        const auction = doc.data()
+        const auctionNumber = auction[vars.FS_AUCTION_AUCTION_NUMBER]
+        const numItems = auction[vars.FS_AUCTION_NUM_ITEMS]
+        const itemList = auction[vars.FS_AUCTION_ITEM_LIST]
+        const len = itemList.length
+        if (len < numItems) {
+            auctionsWithTooFewItems.push({
+                [vars.FS_AUCTION_AUCTION_NUMBER]: auctionNumber,
+                [vars.FS_AUCTION_NUM_ITEMS]: numItems,
+                [vars.FS_AUCTION_ITEM_LIST]: len
+            })
+            auctionCollRef.doc(doc.id).update({ [vars.FS_AUCTION_ITEMS_CRAWLED]: false })
+        }
+    })
+
+    return {
+        count: auctionsWithTooFewItems.length,
+        results: auctionsWithTooFewItems
+    }
+}
+
+exports.initLocationCollection = async () => {
+    const promises = []
+    const locCollRef = db.collection(vars.FS_COLLECTIONS_LOCATIONS.name)
+    const locations = await locCollRef.get()
+    const locAddresses = []
+
+    locations.forEach(locDoc => {
+        locAddresses.push(locDoc.data()[vars.FS_LOC_FTA_ADDRESS])
+    })
+
+    const auctions = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).get()
+
+    auctions.forEach(auctionDoc => {
+        const auction = auctionDoc.data()
+        const auctionAddress = auction[vars.FS_AUCTION_LOCATION_ADDRESS]
+
+        if (locAddresses.indexOf(auctionAddress) === -1) {
+            locAddresses.push(auctionAddress)
+            promises.push(utils.newPromise(async () => {
+                const resp = await utils.geocodeAddress(auctionAddress)
+                const results = resp.json.results[0]
+                const locId = results.place_id
+
+                await locCollRef
+                    .doc(locId)
+                    .set({
+                        [vars.FS_LOC_FTA_ADDRESS]: auctionAddress,
+                        ...results
+                    })
+            }))
+        }
+    })
+
+    return Promise.all(promises)
+}
+
+exports.initBidCollection = async () => {
+    const promises = []
+    const auctions = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).get()
+
+    auctions.forEach(async auctionDoc => {
+        const auction = auctionDoc.data()
+
+        const items = await db.collection(vars.FS_COLLECTIONS_ITEMS.name)
+            .where(vars.FS_ITEM_AUCTION_ID, '==', auction[vars.FS_AUCTION_AUCTION_NUMBER])
+            .get()
+
+        items.forEach(itemDoc => {
+            const item = itemDoc.data()
+            const itemId = item.id
+            const bidInfos = []
+            const bids = item[vars.FS_ITEM_BIDS]
+            const auctionId = item[vars.FS_ITEM_AUCTION_ID]
+            bids.forEach(bid => {
+                bidInfos.push({
+                    [vars.FS_BID_AMOUNT]: bid.bidAmount,
+                    [vars.FS_BID_BIDDER_ID]: bid.bidderId,
+                    [vars.FS_BID_DATE]: bid.bidDate,
+                    [vars.FS_BID_ITEM_ID]: itemId,
+                    [vars.FS_BID_AUCTION_ID]: auctionId,
+                })
+            })
+
+            promises.push(utils.newPromise(() => {
+                return this.addBids(bidInfos)
+            }))
+        })
+
+    })
+
+    return Promise.all(promises)
+}

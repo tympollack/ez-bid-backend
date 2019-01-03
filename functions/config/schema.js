@@ -1066,7 +1066,7 @@ module.exports = {
 
             timeoutSeconds: {
                 format: Number,
-                default: 120
+                default: 540
             }
         },
 

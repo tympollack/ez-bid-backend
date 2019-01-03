@@ -6,8 +6,13 @@ const { db, vars} = module.parent.shareable
 //    /admin/
 const routes = require('express').Router()
 
+// fix firestore data
 routes.post('/badAuctionNumDedupe', badAuctionNumDedupe)
+routes.get('/resetAuctionsNotYetFullyCrawled', resetAuctionsNotYetFullyCrawled)
+routes.get('/initBidCollection', initBidCollection)
+routes.get('/initLocationCollection', initLocationCollection)
 
+// manage firestore
 routes.get('/countFirestoreObjects', countFirestoreObjects)
 routes.get('/clearStats', clearStats)
 routes.get('/deleteCollections', deleteCollections)
@@ -16,14 +21,13 @@ routes.get('/generateAdminSnapshot', generateAdminSnapshot)
 
 routes.get('/geocodeAddress', geocodeAddress)
 
+// puppeteer
 routes.get('/findNewAuctions', findNewAuctions)
 routes.get('/findNewItems', findNewItems)
 
 routes.get('/test', test)
 routes.get('/otherTest', otherTest)
 routes.get('/testFindAuctions', testFindAuctions)
-
-routes.get('/initLocationCollection', initLocationCollection)
 
 module.exports = routes
 
@@ -73,7 +77,10 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
-
+    const snap = await db.collection('items').get()
+    const itemCount = snap.size
+    await db.collection('info').doc('AUCTION_STATS').update({ auctionCount: itemCount })
+    res.send(itemCount + '')
 }
 
 async function geocodeAddress(req, res) {
@@ -82,7 +89,8 @@ async function geocodeAddress(req, res) {
         const resp = await utils.geocodeAddress(address)
         res.json(resp.json)
     } catch (e) {
-        res.json(e.message)
+        console.log(e)
+        res.status(500).send(e.message)
     }
 }
 
@@ -93,7 +101,7 @@ async function generateStats(req, res) {
         res.json(info)
     } catch(e) {
         console.log(e)
-        res.status(500).send(e)
+        res.status(500).send(e.message)
     }
 }
 
@@ -210,41 +218,24 @@ async function testFindAuctions(req, res) {
 
 /////////////////////////////////////////////////////////////////////
 
-async function initLocationCollection(req, res) {
-    const promises = []
-    const locCollRef = db.collection(vars.FS_COLLECTIONS_LOCATIONS.name)
-    const locations = await locCollRef.get()
-    const locAddresses = []
-
-    locations.forEach(locDoc => {
-        locAddresses.push(locDoc.data()[vars.FS_LOC_FTA_ADDRESS])
-    })
-
-    const auctions = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).get()
-
-    auctions.forEach(auctionDoc => {
-        const auction = auctionDoc.data()
-        const auctionAddress = auction[vars.FS_AUCTION_LOCATION_ADDRESS]
-
-        if (locAddresses.indexOf(auctionAddress) === -1) {
-            locAddresses.push(auctionAddress)
-            promises.push(utils.newPromise(async () => {
-                const resp = await utils.geocodeAddress(auctionAddress)
-                const results = resp.json.results[0]
-                const locId = results.place_id
-
-                await locCollRef
-                    .doc(locId)
-                    .set({
-                        [vars.FS_LOC_FTA_ADDRESS]: auctionAddress,
-                        ...results
-                    })
-            }))
-        }
-    })
-
-    await Promise.all(promises)
+async function initBidCollection(req, res) {
+    await fsFuncs.initBidCollection()
     res.send('ok')
+}
+
+async function initLocationCollection(req, res) {
+    await fsFuncs.initLocationCollection()
+    res.send('ok')
+}
+
+async function resetAuctionsNotYetFullyCrawled(req, res) {
+    try {
+        const result = await fsFuncs.resetAuctionsNotYetFullyCrawled()
+        res.json(result)
+    } catch (e) {
+        console.log(e)
+        res.status(500).send(e.message)
+    }
 }
 
 /////////////////////////////////////////////////////////////////////

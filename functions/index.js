@@ -35,7 +35,7 @@ const adminRouter = express.Router()
 adminRouter.use('/', require('./admin/admin'))
 adminApp.use(utils.tryCatchAsync)
 adminApp.use(adminRouter) // must be after others
-exports.admin = functions.https.onRequest(adminApp)
+exports.admin = functions.runWith(config.puppeteer.opts).https.onRequest(adminApp)
 
 const apiApp = express()
 addExpressMiddleware(apiApp)

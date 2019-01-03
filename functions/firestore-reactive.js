@@ -74,32 +74,32 @@ exports.onAuctionCreated = firestore
         })
     })
 
-exports.onBidCreated = firestore
-    .document(vars.FS_COLLECTIONS_BIDS.id.path)
-    .onCreate((snap, context) => {
-        console.log('new bid: ', snap.id)
-
-        const bid = snap.data()
-
-        return executeOnce('bid created', snap, context, t => {
-            return t
-                .get(bidStatsRef)
-                .then(doc => {
-                    const data = doc.data()
-                    const newCount = (data[vars.FS_AR_BID_COUNT] || 0) + 1
-                    const newTotalBid = utils.roundTo((data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT], 2)
-                    const newAvgBid = utils.roundTo(newTotalBid / newCount, 2)
-                    t.update(bidStatsRef, {
-                        [vars.FS_AR_AVERAGE_BID]: newAvgBid,
-                        [vars.FS_AR_BID_COUNT]: newCount,
-                        [vars.FS_AR_TOTAL_BID_AMOUNT]: newTotalBid
-                    })
-                })
-                .catch(e => {
-                    console.log('bid transaction failed:', e)
-                })
-        })
-    })
+// exports.onBidCreated = firestore
+//     .document(vars.FS_COLLECTIONS_BIDS.id.path)
+//     .onCreate((snap, context) => {
+//         console.log('new bid: ', snap.id)
+//
+//         const bid = snap.data()
+//
+//         return executeOnce('bid created', snap, context, t => {
+//             return t
+//                 .get(bidStatsRef)
+//                 .then(doc => {
+//                     const data = doc.data()
+//                     const newCount = (data[vars.FS_AR_BID_COUNT] || 0) + 1
+//                     const newTotalBid = utils.roundTo((data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT], 2)
+//                     const newAvgBid = utils.roundTo(newTotalBid / newCount, 2)
+//                     t.update(bidStatsRef, {
+//                         [vars.FS_AR_AVERAGE_BID]: newAvgBid,
+//                         [vars.FS_AR_BID_COUNT]: newCount,
+//                         [vars.FS_AR_TOTAL_BID_AMOUNT]: newTotalBid
+//                     })
+//                 })
+//                 .catch(e => {
+//                     console.log('bid transaction failed:', e)
+//                 })
+//         })
+//     })
 
 
 exports.onItemCreated = firestore
