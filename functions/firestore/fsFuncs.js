@@ -442,3 +442,15 @@ exports.removeOldEvents = async () => {
     console.log(message)
     return message
 }
+
+exports.getMaxNumberOfBids = async () => {
+    const snap = await db.collection(vars.FS_COLLECTIONS_ITEMS.name).get()
+    let maxBidSize = 0
+    snap.forEach(doc => {
+        const item = doc.data()
+        const bids = item[vars.FS_ITEM_BIDS]
+        const len = bids.length
+        if (len > maxBidSize) maxBidSize = len
+    })
+    return maxBidSize
+}
