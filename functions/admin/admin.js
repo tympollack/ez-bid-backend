@@ -1,4 +1,3 @@
-const moment = require('moment')
 const fsFuncs = require('../firestore/fsFuncs')
 const psFuncs = require('../pubsub/psFuncs')
 const utils = require('../utils')
@@ -11,6 +10,7 @@ const routes = require('express').Router()
 routes.post('/badAuctionNumDedupe', badAuctionNumDedupe)
 routes.get('/resetAuctionsNotYetFullyCrawled', resetAuctionsNotYetFullyCrawled)
 routes.get('/initBidCollection', initBidCollection)
+routes.get('/changeAllBidAmountsToNumbers', changeAllBidAmountsToNumbers)
 routes.get('/initLocationCollection', initLocationCollection)
 
 // manage firestore
@@ -78,20 +78,13 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
-    const mo = moment().subtract(60, 'minutes')
-    const time = new Date(mo)
-    const collRef = db.collection(vars.FS_COLLECTIONS_EVENTS.name)
-    const snap = await collRef
-        .where('processDate', '<', time)
-        .get()
-
-    const promises = []
+    const collRef = db.collection('bids')
+    const snap = await collRef.limit(100000).get()
     snap.forEach(doc => {
-        promises.push(utils.newPromise(() => { return collRef.doc(doc.id).delete() }))
+        collRef.doc(doc.id).delete()
     })
-    await Promise.all(promises)
-    console.log(`${promises.length} events deleted`)
-    res.send(promises.length + '')
+    const itemCount = snap.size
+    res.send(itemCount + '')
 }
 
 async function geocodeAddress(req, res) {
@@ -230,8 +223,23 @@ async function testFindAuctions(req, res) {
 /////////////////////////////////////////////////////////////////////
 
 async function initBidCollection(req, res) {
-    await fsFuncs.initBidCollection()
-    res.send('ok')
+    try {
+        const result = await fsFuncs.initBidCollection()
+        res.json(result)
+    } catch (e) {
+        console.log(e)
+        res.status(500).send(e.message)
+    }
+}
+
+async function changeAllBidAmountsToNumbers(req, res) {
+    try {
+        const result = await fsFuncs.changeAllBidAmountsToNumbers()
+        res.json(result)
+    } catch (e) {
+        console.log(e)
+        res.status(500).send(e.message)
+    }
 }
 
 async function initLocationCollection(req, res) {

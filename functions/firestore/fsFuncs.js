@@ -138,8 +138,7 @@ exports.generateFSReport = async shouldSave => {
         if (docId.indexOf('_STATS') === -1) return
 
         promises.push(new Promise(async resolve => {
-            const statsObj = await this.fsGetObjectById(collName, docId)
-            info[docId] = statsObj
+            info[docId] = await this.fsGetObjectById(collName, docId)
             resolve()
         }))
     })
@@ -321,39 +320,109 @@ exports.initLocationCollection = async () => {
 
 exports.initBidCollection = async () => {
     const promises = []
-    const auctions = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).get()
+    const itemCollRef = db.collection(vars.FS_COLLECTIONS_ITEMS.name)
+    const auctions = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name)
+        .orderBy('auctionNumber', 'desc')
+        .limit(10)
+        .get()
+    let numBids = 0, totalBid = 0
 
-    auctions.forEach(async auctionDoc => {
-        const auction = auctionDoc.data()
+    auctions.forEach(auctionDoc => {
+        promises.push(utils.newPromise(async() => {
+            const auction = auctionDoc.data()
 
-        const items = await db.collection(vars.FS_COLLECTIONS_ITEMS.name)
-            .where(vars.FS_ITEM_AUCTION_ID, '==', auction[vars.FS_AUCTION_AUCTION_NUMBER])
-            .get()
+            const items = await itemCollRef
+                .where(vars.FS_ITEM_AUCTION_ID, '==', auction[vars.FS_AUCTION_AUCTION_NUMBER])
+                .get()
 
-        items.forEach(itemDoc => {
-            const item = itemDoc.data()
-            const itemId = item.id
-            const bidInfos = []
-            const bids = item[vars.FS_ITEM_BIDS]
-            const auctionId = item[vars.FS_ITEM_AUCTION_ID]
-            bids.forEach(bid => {
-                bidInfos.push({
-                    [vars.FS_BID_AMOUNT]: bid.bidAmount,
-                    [vars.FS_BID_BIDDER_ID]: bid.bidderId,
-                    [vars.FS_BID_DATE]: bid.bidDate,
-                    [vars.FS_BID_ITEM_ID]: itemId,
-                    [vars.FS_BID_AUCTION_ID]: auctionId,
+            items.forEach(itemDoc => {
+                const item = itemDoc.data()
+                const itemId = item.id
+                const bidInfos = []
+                const bids = item[vars.FS_ITEM_BIDS]
+                const auctionId = item[vars.FS_ITEM_AUCTION_ID]
+                bids.forEach(bid => {
+                    const amt = bid.bidAmount
+                    numBids++
+                    totalBid += amt
+                    bidInfos.push({
+                        [vars.FS_BID_AMOUNT]: amt,
+                        [vars.FS_BID_BIDDER_ID]: bid.bidderId,
+                        [vars.FS_BID_DATE]: bid.bidDate,
+                        [vars.FS_BID_ITEM_ID]: itemId,
+                        [vars.FS_BID_AUCTION_ID]: auctionId,
+                    })
                 })
+
+                promises.push(utils.newPromise(() => {
+                    // return Promise.resolve()
+                    return this.addBids(bidInfos)
+                }))
             })
-
-            promises.push(utils.newPromise(() => {
-                return this.addBids(bidInfos)
-            }))
-        })
-
+        }))
     })
 
-    return Promise.all(promises)
+    await Promise.all(promises)
+
+    const stats = {
+        [vars.FS_AR_BID_COUNT]: numBids,
+        [vars.FS_AR_TOTAL_BID_AMOUNT]: utils.roundTo(totalBid, 2),
+        [vars.FS_AR_AVERAGE_BID]: utils.roundTo(totalBid / numBids, 2),
+    }
+    await db.collection(vars.FS_COLLECTIONS_INFO.name)
+        .doc(vars.FS_IT_BID_STATS)
+        .set(stats)
+
+    return stats
+}
+
+exports.changeAllBidAmountsToNumbers = async () => {
+    const promises = []
+    const itemCollRef = db.collection(vars.FS_COLLECTIONS_ITEMS.name)
+    const auctions = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).get()
+    let numNum = 0, numStr = 0
+    const stringList = []
+
+    auctions.forEach(auctionDoc => {
+        promises.push(utils.newPromise(async() => {
+            const auction = auctionDoc.data()
+
+            const items = await itemCollRef
+                .where(vars.FS_ITEM_AUCTION_ID, '==', auction[vars.FS_AUCTION_AUCTION_NUMBER])
+                .get()
+
+            items.forEach(itemDoc => {
+                const item = itemDoc.data()
+                const itemId = item.id
+                const bids = item[vars.FS_ITEM_BIDS]
+                const auctionId = item[vars.FS_ITEM_AUCTION_ID]
+                let shouldUpdate = false
+                bids.forEach(bid => {
+                    const amt = bid.bidAmount
+                    const t = typeof amt
+                    if (t !== 'number'){
+                        const dateAdded = new Date(item[vars.FS_ITEM_ADD_DATE]._seconds * 1000)
+                        stringList.push(`${t} ${auctionId} ${itemId} ${amt} ${dateAdded}`)
+                        numStr++
+                        shouldUpdate = true
+                        bid.bidAmount = parseFloat(amt)
+                    } else numNum++
+                })
+
+                if (shouldUpdate) promises.push(utils.newPromise(() => {
+                    return itemCollRef.doc(itemDoc.id).update({ [vars.FS_ITEM_BIDS]: bids })
+                }))
+            })
+        }))
+    })
+
+    await Promise.all(promises)
+
+    return {
+        numNum: numNum,
+        numStr: numStr,
+        stringList: stringList
+    }
 }
 
 exports.removeOldEvents = async () => {

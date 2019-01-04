@@ -27,7 +27,7 @@ exports.onAuctionCreated = firestore
             let potLocExists = false
             potLocRef.forEach(() => { potLocExists = true })
             if (!potLocExists) {
-                console.log('should not get here!!!')
+                console.error('should not get here!!!')
                 try {
                     const resp = await utils.geocodeAddress(auctionAddress)
                     const results = resp.json.results[0]
@@ -74,32 +74,32 @@ exports.onAuctionCreated = firestore
         })
     })
 
-// exports.onBidCreated = firestore
-//     .document(vars.FS_COLLECTIONS_BIDS.id.path)
-//     .onCreate((snap, context) => {
-//         console.log('new bid: ', snap.id)
-//
-//         const bid = snap.data()
-//
-//         return executeOnce('bid created', snap, context, t => {
-//             return t
-//                 .get(bidStatsRef)
-//                 .then(doc => {
-//                     const data = doc.data()
-//                     const newCount = (data[vars.FS_AR_BID_COUNT] || 0) + 1
-//                     const newTotalBid = utils.roundTo((data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT], 2)
-//                     const newAvgBid = utils.roundTo(newTotalBid / newCount, 2)
-//                     t.update(bidStatsRef, {
-//                         [vars.FS_AR_AVERAGE_BID]: newAvgBid,
-//                         [vars.FS_AR_BID_COUNT]: newCount,
-//                         [vars.FS_AR_TOTAL_BID_AMOUNT]: newTotalBid
-//                     })
-//                 })
-//                 .catch(e => {
-//                     console.log('bid transaction failed:', e)
-//                 })
-//         })
-//     })
+exports.onBidCreated = firestore
+    .document(vars.FS_COLLECTIONS_BIDS.id.path)
+    .onCreate((snap, context) => {
+        console.log('new bid: ', snap.id)
+
+        const bid = snap.data()
+
+        return executeOnce('bid created', snap, context, t => {
+            return t
+                .get(bidStatsRef)
+                .then(doc => {
+                    const data = doc.data()
+                    const newCount = (data[vars.FS_AR_BID_COUNT] || 0) + 1
+                    const newTotalBid = utils.roundTo((data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT], 2)
+                    const newAvgBid = utils.roundTo(newTotalBid / newCount, 2)
+                    t.update(bidStatsRef, {
+                        [vars.FS_AR_AVERAGE_BID]: newAvgBid,
+                        [vars.FS_AR_BID_COUNT]: newCount,
+                        [vars.FS_AR_TOTAL_BID_AMOUNT]: newTotalBid
+                    })
+                })
+                .catch(e => {
+                    console.log('bid transaction failed:', e)
+                })
+        })
+    })
 
 
 exports.onItemCreated = firestore
@@ -113,8 +113,13 @@ exports.onItemCreated = firestore
         const bids = item[vars.FS_ITEM_BIDS]
         const auctionId = item[vars.FS_ITEM_AUCTION_ID]
         bids.forEach(bid => {
+            let amt = bid.bidAmount
+            if (typeof amt === 'string') {
+                console.error('bid amount string', auctionId, itemId, amt)
+                amt = parseFloat(amt)
+            }
             bidInfos.push({
-                [vars.FS_BID_AMOUNT]: bid.bidAmount,
+                [vars.FS_BID_AMOUNT]: amt,
                 [vars.FS_BID_BIDDER_ID]: bid.bidderId,
                 [vars.FS_BID_DATE]: bid.bidDate,
                 [vars.FS_BID_ITEM_ID]: itemId,
