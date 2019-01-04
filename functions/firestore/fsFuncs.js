@@ -369,5 +369,7 @@ exports.removeOldEvents = async () => {
         promises.push(utils.newPromise(() => { return collRef.doc(doc.id).delete() }))
     })
     await Promise.all(promises)
-    return `${promises.length} events deleted`
+    const message = `${promises.length} events deleted`
+    console.log(message)
+    return message
 }
