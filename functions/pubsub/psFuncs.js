@@ -167,3 +167,7 @@ exports.findNewItems = async () => {
 exports.generateAdminReport = async () => {
     return fsFuncs.generateFSReport(true)
 }
+
+exports.removeOldEvents = () => {
+    return fsFuncs.removeOldEvents()
+}

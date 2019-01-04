@@ -1,3 +1,4 @@
+const moment = require('moment')
 const fsFuncs = require('../firestore/fsFuncs')
 const psFuncs = require('../pubsub/psFuncs')
 const utils = require('../utils')
@@ -77,10 +78,20 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
-    const snap = await db.collection('items').get()
-    const itemCount = snap.size
-    await db.collection('info').doc('AUCTION_STATS').update({ auctionCount: itemCount })
-    res.send(itemCount + '')
+    const mo = moment().subtract(60, 'minutes')
+    const time = new Date(mo)
+    const collRef = db.collection(vars.FS_COLLECTIONS_EVENTS.name)
+    const snap = await collRef
+        .where('processDate', '<', time)
+        .get()
+
+    const promises = []
+    snap.forEach(doc => {
+        promises.push(utils.newPromise(() => { return collRef.doc(doc.id).delete() }))
+    })
+    await Promise.all(promises)
+    console.log(`${promises.length} events deleted`)
+    res.send(promises.length + '')
 }
 
 async function geocodeAddress(req, res) {

@@ -1,3 +1,4 @@
+const moment = require('moment')
 const db = require('../firestore/init')
 const utils = require('../utils')
 const vars = require('../vars')
@@ -353,4 +354,20 @@ exports.initBidCollection = async () => {
     })
 
     return Promise.all(promises)
+}
+
+exports.removeOldEvents = async () => {
+    const mo = moment().subtract(60, 'minutes')
+    const time = new Date(mo)
+    const collRef = db.collection(vars.FS_COLLECTIONS_EVENTS.name)
+    const snap = await collRef
+        .where('processDate', '<', time)
+        .get()
+
+    const promises = []
+    snap.forEach(doc => {
+        promises.push(utils.newPromise(() => { return collRef.doc(doc.id).delete() }))
+    })
+    await Promise.all(promises)
+    return `${promises.length} events deleted`
 }

@@ -11,3 +11,7 @@ cron:
   url: /publish/generate-admin-report
   schedule: every day 00:00
   timezone: America/Indiana/Indianapolis
+
+- description: Remove old firestore events.
+  url: /publish/remove-old-events
+  schedule: every 1 hours

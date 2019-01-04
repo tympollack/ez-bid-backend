@@ -16,6 +16,11 @@ exports.generateAdminReport = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topi
     return psFuncs.generateAdminReport()
 })
 
+exports.removeOldEvents = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(vars.PS_TOPICS.removeOldEvents).onPublish(() => {
+    console.log('Processing queue:', vars.PS_TOPICS.removeOldEvents)
+    return psFuncs.removeOldEvents()
+})
+
 exports.loginQueue = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(vars.PS_TOPICS.loginqueue).onPublish(message => {
     console.log('Processing queue:', vars.PS_TOPICS.loginqueue)
     console.log(message)

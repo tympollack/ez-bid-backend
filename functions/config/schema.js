@@ -1053,6 +1053,11 @@ module.exports = {
             loginqueue: {
                 format: String,
                 default: 'loginqueue'
+            },
+
+            removeOldEvents: {
+                format: String,
+                default: 'remove-old-events'
             }
         }
     },
