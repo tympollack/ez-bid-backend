@@ -108,10 +108,6 @@ exports.addItems = async itemInfos => {
 exports.addBids = async bidInfos => {
     if (!bidInfos.length) return Promise.reject('No bids to add.')
     const collRef = db.collection(vars.FS_COLLECTIONS_BIDS.name)
-    // bidInfos.forEach(info => {
-    //     const docId = `${info[vars.FS_BID_ITEM_ID]}_${info[vars.FS_BID_BIDDER_ID]}_${info[vars.FS_BID_AMOUNT]}`
-    //     collRef.doc(docId).set(info)
-    // })
 
     const batch = db.batch()
     bidInfos.forEach(info => {
@@ -321,26 +317,25 @@ exports.initLocationCollection = async () => {
 exports.initBidCollection = async () => {
     const promises = []
     const itemCollRef = db.collection(vars.FS_COLLECTIONS_ITEMS.name)
-    const auctions = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name)
-        .orderBy('auctionNumber', 'desc')
-        .limit(10)
-        .get()
-    let numBids = 0, totalBid = 0
+    const limit = 25
+    let numItems = 0, numBids = 0, totalBid = 0
+    const oldStats = await this.fsGetObjectById(vars.FS_COLLECTIONS_INFO.name, vars.FS_IT_BID_STATS)
+    const startingAuction = oldStats.lastAuctionId + 1
+    const endingAuction = startingAuction + limit - 1
 
-    auctions.forEach(auctionDoc => {
-        promises.push(utils.newPromise(async() => {
-            const auction = auctionDoc.data()
-
+    console.log(`processing items for auctions ${startingAuction} - ${endingAuction}`)
+    for (let auctionId = startingAuction; auctionId <= endingAuction; auctionId++) {
+        promises.push(utils.newPromise(async () => {
             const items = await itemCollRef
-                .where(vars.FS_ITEM_AUCTION_ID, '==', auction[vars.FS_AUCTION_AUCTION_NUMBER])
+                .where(vars.FS_ITEM_AUCTION_ID, '==', auctionId)
                 .get()
 
             items.forEach(itemDoc => {
+                numItems++
                 const item = itemDoc.data()
                 const itemId = item.id
                 const bidInfos = []
                 const bids = item[vars.FS_ITEM_BIDS]
-                const auctionId = item[vars.FS_ITEM_AUCTION_ID]
                 bids.forEach(bid => {
                     const amt = bid.bidAmount
                     numBids++
@@ -355,19 +350,26 @@ exports.initBidCollection = async () => {
                 })
 
                 promises.push(utils.newPromise(() => {
-                    // return Promise.resolve()
                     return this.addBids(bidInfos)
+                        .catch(e => {
+                            if (e !== 'No bids to add.') console.log(e)
+                        })
                 }))
             })
+            return Promise.resolve()
         }))
-    })
+    }
 
     await Promise.all(promises)
 
+    console.log(`added ${numBids} new bids from ${numItems} items in ${limit} auctions`)
+    const newNumBids = oldStats[vars.FS_AR_BID_COUNT] + numBids
+    const newBidTotal = utils.roundTo(oldStats[vars.FS_AR_TOTAL_BID_AMOUNT] + totalBid, 2)
     const stats = {
-        [vars.FS_AR_BID_COUNT]: numBids,
-        [vars.FS_AR_TOTAL_BID_AMOUNT]: utils.roundTo(totalBid, 2),
-        [vars.FS_AR_AVERAGE_BID]: utils.roundTo(totalBid / numBids, 2),
+        [vars.FS_AR_BID_COUNT]: newNumBids,
+        [vars.FS_AR_TOTAL_BID_AMOUNT]: newBidTotal,
+        [vars.FS_AR_AVERAGE_BID]: utils.roundTo(newBidTotal / newNumBids, 2),
+        lastAuctionId: endingAuction
     }
     await db.collection(vars.FS_COLLECTIONS_INFO.name)
         .doc(vars.FS_IT_BID_STATS)

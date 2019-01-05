@@ -3,9 +3,9 @@ cron:
   url: /publish/find-new-auctions
   schedule: every 5 minutes
 
-#- description: Find items in auctions.
-#  url: /publish/find-new-items
-#  schedule: every 1 minutes
+- description: Find items in auctions.
+  url: /publish/find-new-items
+  schedule: every 1 minutes
 
 - description: Generate admin report.
   url: /publish/generate-admin-report
