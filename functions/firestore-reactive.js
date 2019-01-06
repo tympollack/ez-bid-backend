@@ -74,33 +74,32 @@ exports.onAuctionCreated = firestore
         })
     })
 
-exports.onBidCreated = firestore
-    .document(vars.FS_COLLECTIONS_BIDS.id.path)
-    .onCreate((snap, context) => {
-        console.log('new bid: ', snap.id)
-
-        const bid = snap.data()
-
-        return executeOnce('bid created', snap, context, t => {
-            return t
-                .get(bidStatsRef)
-                .then(doc => {
-                    const data = doc.data()
-                    const newCount = (data[vars.FS_AR_BID_COUNT] || 0) + 1
-                    const newTotalBid = utils.roundTo((data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT], 2)
-                    const newAvgBid = utils.roundTo(newTotalBid / newCount, 2)
-                    t.update(bidStatsRef, {
-                        [vars.FS_AR_AVERAGE_BID]: newAvgBid,
-                        [vars.FS_AR_BID_COUNT]: newCount,
-                        [vars.FS_AR_TOTAL_BID_AMOUNT]: newTotalBid
-                    })
-                })
-                .catch(e => {
-                    console.log('bid transaction failed:', e)
-                })
-        })
-    })
-
+// exports.onBidCreated = firestore
+//     .document(vars.FS_COLLECTIONS_BIDS.id.path)
+//     .onCreate((snap, context) => {
+//         console.log('new bid: ', snap.id)
+//
+//         const bid = snap.data()
+//
+//         return executeOnce('bid created', snap, context, t => {
+//             return t
+//                 .get(bidStatsRef)
+//                 .then(doc => {
+//                     const data = doc.data()
+//                     const newCount = (data[vars.FS_AR_BID_COUNT] || 0) + 1
+//                     const newTotalBid = utils.roundTo((data[vars.FS_AR_TOTAL_BID_AMOUNT] || 0) + bid[vars.FS_BID_AMOUNT], 2)
+//                     const newAvgBid = utils.roundTo(newTotalBid / newCount, 2)
+//                     t.update(bidStatsRef, {
+//                         [vars.FS_AR_AVERAGE_BID]: newAvgBid,
+//                         [vars.FS_AR_BID_COUNT]: newCount,
+//                         [vars.FS_AR_TOTAL_BID_AMOUNT]: newTotalBid
+//                     })
+//                 })
+//                 .catch(e => {
+//                     console.log('bid transaction failed:', e)
+//                 })
+//         })
+//     })
 
 exports.onItemCreated = firestore
     .document(vars.FS_COLLECTIONS_ITEMS.id.path)
@@ -196,13 +195,21 @@ exports.onUserCreated = firestore
 
 function executeOnce(type, change, context, task) {
     const eventRef = db.collection(vars.FS_COLLECTIONS_EVENTS.name).doc(context.eventId)
-    return db.runTransaction(t =>
-        t.get(eventRef)
-            .then(docSnap => (docSnap.exists ? null : task(t)))
-            .then(() => t.set(eventRef, {
-                type: type,
-                processDate: new Date(),
-                processed: true
-            }))
+    return db.runTransaction(t => {
+        let shouldCreateEvent = false
+        return t.get(eventRef)
+            .then(docSnap => {
+                shouldCreateEvent = !docSnap.exists
+                return docSnap.exists ? null : task(t)
+            })
+            .then(() => {
+                return shouldCreateEvent
+                    ? t.set(eventRef, {
+                    type: type,
+                    processDate: new Date(),
+                    processed: true
+                }) : null
+            })
+        }
     )
 }

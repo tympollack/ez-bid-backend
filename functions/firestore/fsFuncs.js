@@ -113,7 +113,10 @@ exports.addBids = async bidInfos => {
     bidInfos.forEach(info => {
         const docId = `${info[vars.FS_BID_ITEM_ID]}_${info[vars.FS_BID_BIDDER_ID]}_${info[vars.FS_BID_AMOUNT]}`
         const docRef = collRef.doc(docId)
-        batch.set(docRef, info)
+        docRef.get()
+            .then(docSnap => {
+                if (!docSnap.exists) batch.set(docRef, info)
+            })
     })
     return await batch.commit()
 }
