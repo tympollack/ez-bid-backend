@@ -55,6 +55,27 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
+    try {
+        const infos = await psFuncs.rescanItems()
+        res.json(infos)
+    } catch(e) {
+        console.log(e.message)
+        res.send(e.message)
+    }
+}
+
+async function saveThis(req, res) {
+    const batchPromise = batchData => {
+        return utils.newPromise(() => {
+            const batch = db.batch()
+            for (let i = 0, len = batchData.length; i < len; i++) {
+                const d = batchData[i]
+                batch.set(d.docRef, d.data)
+            }
+            return batch.commit()
+        })
+    }
+
     const limit = 10000
     const oneYear = utils.dateFromNow(1, 'years')
     const collRef = db.collection('info')
@@ -62,42 +83,32 @@ async function test(req, res) {
         .collection(vars.FS_IT_RESCAN_ITEMS)
     const snap = await db.collection('items')
         .orderBy('id')
+        .startAfter('873662')
         .limit(limit)
         .get()
 
-    const batchData = [[]]
     const promises = []
     const lastId = snap.docs[snap.size - 1].id
-    let count = 0, total = 0, currentBatchNum = 0, currentBatchCount = 0
+    let count = 0, total = 0, batchData = []
     snap.forEach(doc => {
         const item = doc.data()
         total++
         if (!item[vars.FS_ITEM_TITLE]) {
             count++
-            currentBatchCount++
-            batchData[currentBatchNum].push({
-                docRef: collRef.doc(),
+            const itemId = item[vars.FS_ITEM_ID]
+            batchData.push({
+                docRef: collRef.doc(itemId),
                 data: {
                     [vars.FS_RI_SCAN_BY_DATE]: oneYear,
-                    [vars.FS_ITEM_ID]: item[vars.FS_ITEM_ID],
-                    [vars.FS_ITEM_AUCTION_ID]: item[vars.FS_ITEM_AUCTION_ID]
+                    [vars.FS_RI_ITEM_ID]: itemId,
+                    [vars.FS_RI_AUCTION_ID]: item[vars.FS_ITEM_AUCTION_ID]
                 }
             })
+        }
 
-            if (currentBatchCount === 500 || total === limit || lastId === doc.id) {
-                // todo - fix here
-                promises.push(utils.newPromise(() => {
-                    const batch = db.batch()
-                    const thisBatchData = batchData[currentBatchNum]
-                    for (let i = 0; i < currentBatchCount; i++) {
-                        const d = thisBatchData[i]
-                        batch.set(d.docRef, d.data)
-                    }
-                    return batch.commit()
-                }))
-                currentBatchNum++
-                batchData.push([])
-            }
+        if (batchData.length === 500 || total === limit || lastId === doc.id) {
+            promises.push(batchPromise(batchData.slice()))
+            batchData = []
         }
     })
     await Promise.all(promises)

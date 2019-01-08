@@ -19,6 +19,14 @@ exports.fsGetDocById = (db, collection, id) => {
     })
 }
 
+exports.nextRescan = itemEndDate => {
+    if (itemEndDate < new Date()) return 0
+    if (itemEndDate < this.dateFromNow(10, 'minutes')) return this.dateFromNow(2, 'minutes')
+    if (itemEndDate < this.dateFromNow(1, 'hours')) return this.dateFromNow(5, 'minutes')
+    if (itemEndDate < this.dateFromNow(1, 'days')) return this.dateFromNow(1, 'hours')
+    else return this.dateFromNow(1, 'days')
+}
+
 exports.dateFromNow = (amt, type) => {
     const mo = moment().add(amt, type)
     return new Date(mo)

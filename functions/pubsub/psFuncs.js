@@ -3,6 +3,7 @@ const db = require('../firestore/init')
 const fsFuncs = require('../firestore/fsFuncs')
 const puppetFuncs = require('../puppeteering/puppetFuncs')
 const vars = require('../vars')
+const utils = require('../utils')
 
 exports.findNewAuctions = async () => {
     const highestGoodAuction = await fsFuncs.findHighestGoodAuction()
@@ -179,5 +180,59 @@ exports.rescanItems = async () => {
     }
     opts.db = db
 
+    console.log('getting next items to rescan')
+    const collRef = db.collection(vars.FS_COLLECTIONS_INFO.name)
+        .doc(vars.FS_IT_RESCAN_ITEMS)
+        .collection(vars.FS_IT_RESCAN_ITEMS)
+    const rescanSnap = await collRef
+        .orderBy(vars.FS_RI_SCAN_BY_DATE)
+        .limit(vars.PS_RESCAN_ITEMS_AMOUNT)
+        .get()
+
+    if (!rescanSnap.size) return 'No items scheduled to rescan.'
+
     console.log('preparing crawl for items')
+    const rescanInfo = {}
+    let skipLogin = true
+    const updateBatch = db.batch()
+    rescanSnap.forEach(doc => {
+        const data = doc.data()
+        const auctionId = data[vars.FS_RI_AUCTION_ID]
+        const itemId = data[vars.FS_RI_ITEM_ID] || data.id
+
+        if (rescanInfo.hasOwnProperty(auctionId)) rescanInfo[auctionId].push(itemId)
+        else rescanInfo[auctionId] = [itemId]
+
+        const endDate = (data[vars.FS_RI_END_DATE] || {})._seconds * 1000
+        const isActiveItem = endDate > new Date()
+        if (skipLogin) skipLogin = !isActiveItem
+
+        const docRef = collRef.doc(doc.id)
+        if (isActiveItem && data[vars.FS_RI_SCAN_ON_INTERVAL]) {
+            updateBatch.update(docRef, { [vars.FS_RI_SCAN_BY_DATE]: utils.nextRescan(endDate) })
+        } else {
+            updateBatch.delete(docRef)
+        }
+    })
+    await updateBatch.commit()
+
+    try {
+        const goodInfos = []
+
+        const keys = Object.keys(rescanInfo)
+        for (let i = 0, len = keys.length; i < len; i++) {
+            const auctionId = keys[i]
+            const actionResp = await puppetFuncs.crawlItems(auctionId, rescanInfo[auctionId], opts)
+            if (!Array.isArray(actionResp)) throw actionResp
+            actionResp.forEach(info => {
+                info[vars.FS_ITEM_ADD_DATE] = new Date()
+                goodInfos.push(info) // todo figure out validation that would fail an item
+            })
+        }
+
+        return fsFuncs.addItems(goodInfos)
+    } catch(e) {
+        console.log(e)
+        throw e
+    }
 }

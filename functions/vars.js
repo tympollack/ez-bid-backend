@@ -112,7 +112,12 @@ exports.FS_IT_PROG_MOD_CONFIG = this.FS_INFO_TYPES.progModConfig
 exports.FS_IT_RESCAN_ITEMS = this.FS_INFO_TYPES.rescanItems
 
 exports.FS_PMC_MINUTES_AGO = this.FS_INFO_PROG_MOD_CONFIG.baseMinutesAgo.name
+
+exports.FS_RI_AUCTION_ID = this.FS_INFO_RESCAN_ITEMS.auctionId.name
+exports.FS_RI_END_DATE = this.FS_INFO_RESCAN_ITEMS.endDate.name
+exports.FS_RI_ITEM_ID = this.FS_INFO_RESCAN_ITEMS.itemId.name
 exports.FS_RI_SCAN_BY_DATE = this.FS_INFO_RESCAN_ITEMS.scanByDate.name
+exports.FS_RI_SCAN_ON_INTERVAL = this.FS_INFO_RESCAN_ITEMS.scanOnInterval.name
 
 exports.FS_ITEM_ADD_DATE = this.FS_FIELDS_ITEM.addDate.name
 exports.FS_ITEM_AUCTION_ID = this.FS_FIELDS_ITEM.auctionId.name
@@ -159,6 +164,7 @@ exports.PS_BASE_MINUTES_AGO = this.CONFIG_PUBSUB.baseMinutesAgo
 exports.PS_FIND_AUCTIONS_AMOUNT = this.CONFIG_PUBSUB.findAuctionsAmount
 exports.PS_FIND_ITEMS_AMOUNT = this.CONFIG_PUBSUB.findItemsAmount
 exports.PS_MAX_ITEMS_PER_PAGE = this.CONFIG_PUBSUB.maxItemsPerPage
+exports.PS_RESCAN_ITEMS_AMOUNT = this.CONFIG_PUBSUB.rescanItemsAmount
 exports.PS_TOPICS = this.CONFIG_PUBSUB.topics
 
 /////////////////////////////////////////////////////////////////////

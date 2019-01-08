@@ -960,6 +960,39 @@ module.exports = {
                 },
 
                 rescanItems: {
+                    auctionId: {
+                        name: {
+                            format: String,
+                            default: 'auctionId'
+                        },
+                        path: {
+                            format: String,
+                            default: 'info/{auctionId}'
+                        }
+                    },
+
+                    endDate: {
+                        name: {
+                            format: String,
+                            default: 'endDate'
+                        },
+                        path: {
+                            format: String,
+                            default: 'info/{endDate}'
+                        }
+                    },
+
+                    itemId: {
+                        name: {
+                            format: String,
+                            default: 'itemId'
+                        },
+                        path: {
+                            format: String,
+                            default: 'info/{itemId}'
+                        }
+                    },
+
                     scanByDate: {
                         name: {
                             format: String,
@@ -968,6 +1001,17 @@ module.exports = {
                         path: {
                             format: String,
                             default: 'info/{scanByDate}'
+                        }
+                    },
+
+                    scanOnInterval: {
+                        name: {
+                            format: String,
+                            default: 'scanOnInterval'
+                        },
+                        path: {
+                            format: String,
+                            default: 'info/{scanOnInterval}'
                         }
                     },
                 },
@@ -1049,6 +1093,11 @@ module.exports = {
         maxItemsPerPage: {
             format: Number,
             default: 24
+        },
+
+        rescanItemsAmount: {
+            format: Number,
+            default: 10
         },
 
         topics: {

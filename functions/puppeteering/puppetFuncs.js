@@ -7,21 +7,13 @@ const puppeteer = require('puppeteer')
 const { TimeoutError } = require('puppeteer/Errors')
 const waitUntilIdle = { waitUntil: 'networkidle2' }
 
-const puppetConfig = config.puppeteer
+const puppetConfig = vars.CONFIG_PUPPETEER
 const auctionSelectors = puppetConfig.selectors.auctionDetails
 const puppetCookies = puppetConfig.cookies
 const jsessionIdName = puppetCookies.jsessionId
 const awsalbName = puppetCookies.awsalb
 
-const { firestore, httpResponses } = config
-const fsUsersCollection = firestore.collections.users
-const fsUserFields = fsUsersCollection.fields
-const sessionVars = fsUserFields.session
-const fsSession = sessionVars.name
-const sessionFields = sessionVars.fields
-const fsCookie = sessionFields.cookie.name
-const fsCsrf = sessionFields.csrf.name
-const fsExpiration = sessionFields.expiration.name
+const { httpResponses } = config
 
 // const rejectedResourceTypes = ['stylesheet', 'font', 'image']
 // const rejectedDomainsRegex = /(cdnwidget.com|adroll.com|cdnbasket.net|facebook|zopim.com|zdassets.com)/
@@ -32,15 +24,15 @@ async function updateUserSession(db, page, userId) {
     const cookies = await page.cookies()
     const jsessionId = findCookieByName(cookies, jsessionIdName)
     const awsalb = findCookieByName(cookies, awsalbName)
-    session[fsCookie] = `${jsessionIdName}=${jsessionId};${awsalbName}=${awsalb}`
+    session[vars.FS_SESSION_COOKIE] = `${jsessionIdName}=${jsessionId};${awsalbName}=${awsalb}`
 
-    session[fsCsrf] = await page.$eval(puppetConfig.selectors.meta.csrf, element => element.content)
+    session[vars.FS_SESSION_CSRF] = await page.$eval(puppetConfig.selectors.meta.csrf, element => element.content)
 
-    const doc = await utils.fsGetDocById(db, fsUsersCollection.name, userId)
+    const doc = await utils.fsGetDocById(db, vars.FS_COLLECTIONS_USERS.name, userId)
     doc.set({
-        [fsSession]: {
+        [vars.FS_USER_SESSION]: {
             ...session,
-            [fsExpiration]: new Date(Date.now() + 82800000)
+            [vars.FS_SESSION_EXPIRATION]: new Date(Date.now() + 82800000)
         }
     }, {merge: true})
     console.log('set bidfta creds for user', userId)
