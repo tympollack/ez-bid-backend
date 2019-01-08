@@ -79,6 +79,7 @@ exports.FS_INFO_VALUE = this.FS_FIELDS_INFO.value.name
 exports.FS_INFO_ADMIN_REPORT = this.FS_COLLECTIONS_INFO.adminReport
 exports.FS_INFO_TYPES = this.FS_COLLECTIONS_INFO.types
 exports.FS_INFO_PROG_MOD_CONFIG = this.FS_COLLECTIONS_INFO.progModConfig
+exports.FS_INFO_RESCAN_ITEMS = this.FS_COLLECTIONS_INFO.rescanItems
 
 exports.FS_AR_AUCTIONS = this.FS_INFO_ADMIN_REPORT.auctions
 exports.FS_AR_AUCTION_COUNT = this.FS_AR_AUCTIONS.auctionCount
@@ -108,8 +109,10 @@ exports.FS_IT_ITEM_STATS = this.FS_INFO_TYPES.itemStats
 exports.FS_IT_LOCATION_STATS = this.FS_INFO_TYPES.locationStats
 exports.FS_IT_USER_STATS = this.FS_INFO_TYPES.userStats
 exports.FS_IT_PROG_MOD_CONFIG = this.FS_INFO_TYPES.progModConfig
+exports.FS_IT_RESCAN_ITEMS = this.FS_INFO_TYPES.rescanItems
 
 exports.FS_PMC_MINUTES_AGO = this.FS_INFO_PROG_MOD_CONFIG.baseMinutesAgo.name
+exports.FS_RI_SCAN_BY_DATE = this.FS_INFO_RESCAN_ITEMS.scanByDate.name
 
 exports.FS_ITEM_ADD_DATE = this.FS_FIELDS_ITEM.addDate.name
 exports.FS_ITEM_AUCTION_ID = this.FS_FIELDS_ITEM.auctionId.name

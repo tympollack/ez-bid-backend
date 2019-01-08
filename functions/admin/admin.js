@@ -50,41 +50,58 @@ async function badAuctionNumDedupe(req, res) {
 }
 
 async function otherTest(req, res) {
-    const snap = await db.collection(vars.FS_COLLECTIONS_AUCTIONS.name).get()
-    const locations = {}
-    snap.forEach(doc => {
-        const d = doc.data()
-        const locKey = d[vars.FS_AUCTION_LOCATION_ADDRESS]
-        const endDate = d[vars.FS_AUCTION_END_DATE]
-        if (!locations[locKey]) locations[locKey] = {
-            // address: locKey,
-            lastAuctionEnded: endDate,
-            numAuctions: 0,
-            auctions: []
-        }
-        const location = locations[locKey]
-        location.auctions.push(doc.id)
-        if (location.lastAuctionEnded._seconds < endDate._seconds) location.lastAuctionEnded = endDate
-    })
-
-    Object.values(locations).forEach(loc => {
-        const list = loc.auctions
-        loc.numAuctions = list.length
-        loc.auctions = list.sort((a,b)=>b-a)
-        loc.lastAuctionEnded = new Date(loc.lastAuctionEnded._seconds * 1000)
-    })
-
-    res.json(locations)
+    const snap = await db.collection('info').doc('RESCAN_ITEMS').collection('RESCAN_ITEMS').get()
+    res.send(snap.size + '')
 }
 
 async function test(req, res) {
-    const collRef = db.collection('bids')
-    const snap = await collRef.limit(100000).get()
+    const limit = 10000
+    const oneYear = utils.dateFromNow(1, 'years')
+    const collRef = db.collection('info')
+        .doc(vars.FS_IT_RESCAN_ITEMS)
+        .collection(vars.FS_IT_RESCAN_ITEMS)
+    const snap = await db.collection('items')
+        .orderBy('id')
+        .limit(limit)
+        .get()
+
+    const batchData = [[]]
+    const promises = []
+    const lastId = snap.docs[snap.size - 1].id
+    let count = 0, total = 0, currentBatchNum = 0, currentBatchCount = 0
     snap.forEach(doc => {
-        collRef.doc(doc.id).delete()
+        const item = doc.data()
+        total++
+        if (!item[vars.FS_ITEM_TITLE]) {
+            count++
+            currentBatchCount++
+            batchData[currentBatchNum].push({
+                docRef: collRef.doc(),
+                data: {
+                    [vars.FS_RI_SCAN_BY_DATE]: oneYear,
+                    [vars.FS_ITEM_ID]: item[vars.FS_ITEM_ID],
+                    [vars.FS_ITEM_AUCTION_ID]: item[vars.FS_ITEM_AUCTION_ID]
+                }
+            })
+
+            if (currentBatchCount === 500 || total === limit || lastId === doc.id) {
+                // todo - fix here
+                promises.push(utils.newPromise(() => {
+                    const batch = db.batch()
+                    const thisBatchData = batchData[currentBatchNum]
+                    for (let i = 0; i < currentBatchCount; i++) {
+                        const d = thisBatchData[i]
+                        batch.set(d.docRef, d.data)
+                    }
+                    return batch.commit()
+                }))
+                currentBatchNum++
+                batchData.push([])
+            }
+        }
     })
-    const itemCount = snap.size
-    res.send(itemCount + '')
+    await Promise.all(promises)
+    res.send(count + ' items without titles out of ' + total + ', last item ' + lastId)
 }
 
 async function geocodeAddress(req, res) {

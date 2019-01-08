@@ -110,14 +110,18 @@ exports.addBids = async bidInfos => {
     const collRef = db.collection(vars.FS_COLLECTIONS_BIDS.name)
 
     const batch = db.batch()
+    const promises = []
     bidInfos.forEach(info => {
         const docId = `${info[vars.FS_BID_ITEM_ID]}_${info[vars.FS_BID_BIDDER_ID]}_${info[vars.FS_BID_AMOUNT]}`
         const docRef = collRef.doc(docId)
-        docRef.get()
-            .then(docSnap => {
-                if (!docSnap.exists) batch.set(docRef, info)
-            })
+        promises.push(utils.newPromise(() => {
+            return docRef.get()
+                .then(docSnap => {
+                    if (!docSnap.exists) batch.set(docRef, info)
+                })
+        }))
     })
+    await Promise.all(promises)
     return await batch.commit()
 }
 

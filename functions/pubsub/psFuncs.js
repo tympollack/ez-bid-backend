@@ -105,7 +105,7 @@ exports.findNewItems = async () => {
     console.log('Looking up items...')
 
     console.log('getting user session from firestore')
-    let opts = await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
+    const opts = await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
     if (!opts) {
         const m = 'failed getting user session'
         console.log(m)
@@ -116,9 +116,7 @@ exports.findNewItems = async () => {
     console.log('preparing crawl for items')
     const auction = await fsFuncs.findHighestNonItemCrawledAuction()
     const auctionId = auction[vars.FS_AUCTION_AUCTION_NUMBER]
-    if (!auctionId) {
-        return 'currently no auctions to crawl'
-    }
+    if (!auctionId) return 'currently no auctions to crawl'
 
     const numItems = auction[vars.FS_AUCTION_NUM_ITEMS]
     const itemList = auction[vars.FS_AUCTION_ITEM_LIST] || []
@@ -136,9 +134,7 @@ exports.findNewItems = async () => {
 
     try {
         const actionResp = await puppetFuncs.crawlItemInfo(auctionId, pageNum, startIdx, opts)
-        if (!Array.isArray(actionResp)) {
-            throw actionResp
-        }
+        if (!Array.isArray(actionResp)) throw actionResp
 
         const goodInfos = []
         actionResp.forEach(info => {
@@ -146,7 +142,6 @@ exports.findNewItems = async () => {
             itemList.push(itemId)
 
             info[vars.FS_ITEM_ADD_DATE] = new Date()
-            info[vars.FS_ITEM_AUCTION_ID] = auctionId
             goodInfos.push(info) // todo figure out validation that would fail an item
         })
 
@@ -170,4 +165,19 @@ exports.generateAdminReport = async () => {
 
 exports.removeOldEvents = () => {
     return fsFuncs.removeOldEvents()
+}
+
+exports.rescanItems = async () => {
+    console.log('Rescanning items...')
+
+    console.log('getting user session from firestore')
+    let opts = await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
+    if (!opts) {
+        const m = 'failed getting user session'
+        console.log(m)
+        throw new Error(m)
+    }
+    opts.db = db
+
+    console.log('preparing crawl for items')
 }

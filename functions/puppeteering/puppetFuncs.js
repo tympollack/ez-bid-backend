@@ -49,100 +49,7 @@ async function updateUserSession(db, page, userId) {
 }
 
 // opts: userId, bidnum, bidpw, session, forceLogin, skipLogin, db
-exports.puppetAction = async (opts, next) => {
-    const ret = {}
-    const { userId, bidnum, bidpw, session, forceLogin, skipLogin, db } = opts
-    // const browser = await puppeteer.launch({ headless: false }) // for testing purposes only
-    const browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']})
-    console.log('browser launched')
-    try {
-
-        const page = await browser.newPage()
-
-        // todo -- idk see if we can dig into this sometime to not load as much; seems to make puppet time out
-        // await page.setRequestInterception(true)
-        //
-        // page.on('request', (req) => {
-        //
-        //     if (rejectedResourceTypes.indexOf(req.resourceType()) > -1
-        //         // || match === 'images-na.ssl-images-amazon.com'
-        //         // || req.url().match(rejectedDomainsRegex)
-        //     ) {
-        //         req.abort()
-        //     }
-        //     else {
-        //         // const domain = req.url().replace('http://','').replace('https://','').split(/[/?#]/)[0]
-        //         // if (domain !== 'www.bidfta.com') console.log(domain)
-        //         req.continue()
-        //     }
-        // })
-
-        if (!skipLogin) {
-            // if (forceLogin || !utils.isValidSession(session)) {
-                await page.goto(config.bidApiUrls.login, waitUntilIdle)
-                console.log('browser at fta login screen')
-
-                const loginSelectors = puppetConfig.selectors.login
-                await page.type(loginSelectors.username, bidnum, { delay: 100 })
-                await page.type(loginSelectors.password, bidpw, { delay: 100 })
-                await Promise.all([
-                    page.keyboard.press('Enter'),
-                    page.waitForNavigation(waitUntilIdle),
-                ])
-
-                const pageUrl = page.url()
-                const error = Object.entries(httpResponses).find((key, val) => pageUrl.indexOf(val.dirty) > -1)
-                if (error) {
-                    ret.error = error
-                    return ret
-                }
-
-                console.log('browser logged in')
-                ret.session = await updateUserSession(db, page, userId)
-            // } else {
-            //     const split = session[fsCookie].split(';')
-            //     const jessionId = split[0].replace('JESSIONID=', '')
-            //     const awsalb = split[1].replace('AWSALB=', '')
-            //     const cookies = [
-            //         {
-            //             name: 'JESSIONID',
-            //             value: jessionId,
-            //             domain: 'www.bidfta.com'
-            //         },
-            //         {
-            //             name: 'AWSALB',
-            //             value: awsalb,
-            //             domain: 'www.bidfta.com'
-            //         },
-            //         {
-            //             name: fsCsrf,
-            //             value: session[fsCsrf],
-            //             domain: 'www.bidfta.com'
-            //         }
-            //     ]
-            //
-            //     await page.setCookie(...cookies)
-            // }
-        }
-
-        if (next) await next(page)
-
-        return ret
-    } catch (e) {
-        const easter = e.toString()
-        console.log('error:', easter)
-        if (e instanceof TimeoutError) {
-            ret.error = httpResponses.timeout
-        } else {
-            ret.error = Object.assign({}, httpResponses.internalServerError)
-            ret.error.clean += ' ' + easter
-        }
-        return ret
-    } finally {
-        await browser.close()
-        console.log('browser closed')
-    }
-}
+exports.puppetAction = puppetAction
 
 exports.crawlAuctionInfo = async (auctionIds, opts) => {
     const unsanitaryInfos = []
@@ -213,10 +120,9 @@ exports.crawlAuctionInfo = async (auctionIds, opts) => {
 }
 
 exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
-    const unsanitaryInfos = []
-    const isOldAuction = opts.skipLogin
     const auctionDetailsUrl = `${vars.BID_AUCTION_ITEMS_URL}?${vars.BID_AUCTION_ITEMS_PARAMS_AUCTIONID}=${auctionId}&${vars.BID_AUCTION_ITEMS_PARAMS_PAGEID}=${pageNum}`
-    const actionResp = await this.puppetAction(opts, async page => {
+    let idsToCrawl = []
+    let actionResp = await puppetAction(opts, async page => {
         await page.goto(auctionDetailsUrl, waitUntilIdle)
         console.log('browser at auction item list page', auctionDetailsUrl)
 
@@ -226,18 +132,47 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
             return data.map(d => d.replace('itemContainer', ''))
         }, vars.PUP_SEL_AUCTION_ITEMS_ITEM_DIV_LIST.selector)
 
-        const idsToCrawl = itemIds.slice(startIdx, Math.min(itemIds.length, startIdx + vars.PS_FIND_ITEMS_AMOUNT, vars.PS_MAX_ITEMS_PER_PAGE))
-        const itemDetailsUrl = vars.BID_ITEM_DETAILS_URL
-            + `?${vars.BID_ITEM_DETAILS_PARAMS_SOURCE}=${vars.BID_ITEM_DETAILS_PARAMS_SOURCE_VAL}`
-            + `&${vars.BID_ITEM_DETAILS_PARAMS_AUCTIONID}=${auctionId}`
-            + `&${vars.BID_ITEM_DETAILS_PARAMS_ITEMID}=`
+        idsToCrawl = itemIds.slice(startIdx, Math.min(itemIds.length, startIdx + vars.PS_FIND_ITEMS_AMOUNT, vars.PS_MAX_ITEMS_PER_PAGE))
+    })
+
+    // return error
+    if (actionResp.error || !idsToCrawl.length) return actionResp
+
+    return crawlItems(auctionId, idsToCrawl, opts)
+}
+
+exports.crawlItems = crawlItems
+
+/////////////////////////////////////////////////////////////////////
+
+function addToObjectIfNotEmpty(obj, field, str = '') {
+    const s = str.trim()
+    if (s) obj[field] = s
+}
+
+function findCookieByName(cookies, name) {
+    return cookies.find(c => c.name === name).value
+}
+
+async function crawlItems(auctionId, idsToCrawl, opts) {
+    const isOldAuction = opts.skipLogin
+    const unsanitaryInfos = []
+    const itemDetailsUrl = vars.BID_ITEM_DETAILS_URL
+        + `?${vars.BID_ITEM_DETAILS_PARAMS_SOURCE}=${vars.BID_ITEM_DETAILS_PARAMS_SOURCE_VAL}`
+        + `&${vars.BID_ITEM_DETAILS_PARAMS_AUCTIONID}=${auctionId}`
+        + `&${vars.BID_ITEM_DETAILS_PARAMS_ITEMID}=`
+
+    const actionResp = await puppetAction(opts, async page => {
         for (let i = 0, len = idsToCrawl.length; i < len; i++) {
             const itemId = idsToCrawl[i]
             const itemUrl = itemDetailsUrl + itemId
             await page.goto(itemUrl, waitUntilIdle)
             console.log('browser at item page', itemUrl)
 
-            const info = { [vars.FS_ITEM_ID]: itemId }
+            const info = {
+                [vars.FS_ITEM_AUCTION_ID]: auctionId,
+                [vars.FS_ITEM_ID]: itemId
+            }
             const promises = []
             Object.entries(vars.PUP_SELECTORS_ITEM_DETAILS).forEach(([key, val]) => {
                 const promise = new Promise(async resolve => {
@@ -258,10 +193,10 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
                                     document.querySelectorAll(`${selector} tbody tr`).forEach(tr => {
                                         const tds = tr.childNodes
                                         if (tds.length === 3) data.push({
-                                                bidderId: tds[0].textContent,
-                                                bidAmount: parseFloat(tds[1].textContent.replace('$ ', '')),
-                                                bidDate: tds[2].textContent
-                                            })
+                                            bidderId: tds[0].textContent,
+                                            bidAmount: parseFloat(tds[1].textContent.replace('$ ', '')),
+                                            bidDate: tds[2].textContent
+                                        })
                                     })
                                     return data
                                 }, tableSelector)
@@ -381,13 +316,97 @@ exports.crawlItemInfo = async (auctionId, pageNum, startIdx, opts) => {
     return sanitaryInfos
 }
 
-/////////////////////////////////////////////////////////////////////
+async function puppetAction(opts, next) {
+    const ret = {}
+    const { userId, bidnum, bidpw, session, forceLogin, skipLogin, db } = opts
+    // const browser = await puppeteer.launch({ headless: false }) // for testing purposes only
+    const browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']})
+    console.log('browser launched')
+    try {
 
-function addToObjectIfNotEmpty(obj, field, str = '') {
-    const s = str.trim()
-    if (s) obj[field] = s
-}
+        const page = await browser.newPage()
 
-function findCookieByName(cookies, name) {
-    return cookies.find(c => c.name === name).value
+        // todo -- idk see if we can dig into this sometime to not load as much; seems to make puppet time out
+        // await page.setRequestInterception(true)
+        //
+        // page.on('request', (req) => {
+        //
+        //     if (rejectedResourceTypes.indexOf(req.resourceType()) > -1
+        //         // || match === 'images-na.ssl-images-amazon.com'
+        //         // || req.url().match(rejectedDomainsRegex)
+        //     ) {
+        //         req.abort()
+        //     }
+        //     else {
+        //         // const domain = req.url().replace('http://','').replace('https://','').split(/[/?#]/)[0]
+        //         // if (domain !== 'www.bidfta.com') console.log(domain)
+        //         req.continue()
+        //     }
+        // })
+
+        if (!skipLogin) {
+            // if (forceLogin || !utils.isValidSession(session)) {
+            await page.goto(config.bidApiUrls.login, waitUntilIdle)
+            console.log('browser at fta login screen')
+
+            const loginSelectors = puppetConfig.selectors.login
+            await page.type(loginSelectors.username, bidnum, { delay: 100 })
+            await page.type(loginSelectors.password, bidpw, { delay: 100 })
+            await Promise.all([
+                page.keyboard.press('Enter'),
+                page.waitForNavigation(waitUntilIdle),
+            ])
+
+            const pageUrl = page.url()
+            const error = Object.entries(httpResponses).find((key, val) => pageUrl.indexOf(val.dirty) > -1)
+            if (error) {
+                ret.error = error
+                return ret
+            }
+
+            console.log('browser logged in')
+            ret.session = await updateUserSession(db, page, userId)
+            // } else {
+            //     const split = session[fsCookie].split(';')
+            //     const jessionId = split[0].replace('JESSIONID=', '')
+            //     const awsalb = split[1].replace('AWSALB=', '')
+            //     const cookies = [
+            //         {
+            //             name: 'JESSIONID',
+            //             value: jessionId,
+            //             domain: 'www.bidfta.com'
+            //         },
+            //         {
+            //             name: 'AWSALB',
+            //             value: awsalb,
+            //             domain: 'www.bidfta.com'
+            //         },
+            //         {
+            //             name: fsCsrf,
+            //             value: session[fsCsrf],
+            //             domain: 'www.bidfta.com'
+            //         }
+            //     ]
+            //
+            //     await page.setCookie(...cookies)
+            // }
+        }
+
+        if (next) await next(page)
+
+        return ret
+    } catch (e) {
+        const easter = e.toString()
+        console.log('error:', easter)
+        if (e instanceof TimeoutError) {
+            ret.error = httpResponses.timeout
+        } else {
+            ret.error = Object.assign({}, httpResponses.internalServerError)
+            ret.error.clean += ' ' + easter
+        }
+        return ret
+    } finally {
+        await browser.close()
+        console.log('browser closed')
+    }
 }

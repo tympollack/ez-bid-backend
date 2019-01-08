@@ -959,6 +959,19 @@ module.exports = {
                     },
                 },
 
+                rescanItems: {
+                    scanByDate: {
+                        name: {
+                            format: String,
+                            default: 'scanByDate'
+                        },
+                        path: {
+                            format: String,
+                            default: 'info/{scanByDate}'
+                        }
+                    },
+                },
+
                 types: {
                     badAuctionNum: {
                         format: String,
@@ -998,6 +1011,11 @@ module.exports = {
                     progModConfig: {
                         format: String,
                         default: 'PROGRAMATICALLY_MODDED_CONFIG'
+                    },
+
+                    rescanItems: {
+                        format: String,
+                        default: 'RESCAN_ITEMS'
                     },
                 }
             }
@@ -1058,6 +1076,11 @@ module.exports = {
             removeOldEvents: {
                 format: String,
                 default: 'remove-old-events'
+            },
+
+            rescanItems: {
+                format: String,
+                default: 'rescan-items'
             }
         }
     },

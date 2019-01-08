@@ -21,6 +21,11 @@ exports.removeOldEvents = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(va
     return psFuncs.removeOldEvents()
 })
 
+exports.rescanItems = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(vars.PS_TOPICS.rescanItems).onPublish(() => {
+    console.log('Processing queue:', vars.PS_TOPICS.rescanItems)
+    return psFuncs.rescanItems()
+})
+
 exports.loginQueue = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(vars.PS_TOPICS.loginqueue).onPublish(message => {
     console.log('Processing queue:', vars.PS_TOPICS.loginqueue)
     console.log(message)
@@ -29,9 +34,3 @@ exports.loginQueue = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(vars.PS
         console.log(`Message Data: ${dataString}`)
     }
 })
-
-/////////////////////////////////////////////////////////////////////
-
-function logIfString(r) {
-    if (typeof r === 'string') console.log(r)
-}

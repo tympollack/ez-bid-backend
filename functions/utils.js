@@ -2,6 +2,7 @@ const vars = require('./vars')
 const cloudTasks = require('@google-cloud/tasks')
 const crypto = require('crypto')
 const gmc = require('./googleMapsClient')
+const moment = require('moment')
 
 // @deprecated
 exports.fsGetObjectById = (db, collection, id) => {
@@ -16,6 +17,11 @@ exports.fsGetDocById = (db, collection, id) => {
     return new Promise(async resolve => {
         resolve(await db.collection(collection).doc(id))
     })
+}
+
+exports.dateFromNow = (amt, type) => {
+    const mo = moment().add(amt, type)
+    return new Date(mo)
 }
 
 exports.geocodeAddress = address => {

@@ -140,7 +140,6 @@ exports.onItemCreated = firestore
                     const data = doc.data()
                     const oldCount = data[vars.FS_AR_ITEM_COUNT] || 0
                     const newCount = oldCount + 1
-                    console.log(`updating item count from ${oldCount} to ${newCount}`)
                     t.update(itemStatsRef, {[vars.FS_AR_ITEM_COUNT]: newCount})
                 })
                 .catch(e => {
