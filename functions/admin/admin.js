@@ -56,10 +56,40 @@ async function otherTest(req, res) {
 
 async function test(req, res) {
     try {
-        const infos = await psFuncs.rescanItems()
-        res.json(infos)
-    } catch(e) {
-        console.log(e.message)
+        const snap = await db.collection('items').limit(100).get()
+        const promises = []
+        const items = []
+        snap.forEach(doc => {
+            const item = doc.data()
+            items.push(item)
+
+            const params = {
+                method: 'POST',
+                auth: {
+                    username: 'user',
+                    password: 'Q39Ub5yQgkwn'
+                },
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id: doc.id,
+                    title: item[vars.FS_ITEM_TITLE],
+                    desc: item[vars.FS_ITEM_DESC],
+                    model: item[vars.FS_ITEM_MODEL],
+                    status: item[vars.FS_ITEM_STATUS]
+                })
+            }
+
+            promises.push(utils.newPromise(() => {
+                return fetch('http://35.224.151.143/elasticsearch/item/' + doc.id, params)
+            }))
+        })
+
+        await Promise.all(promises)
+        res.json(items)
+    } catch (e) {
+        console.log(e)
         res.send(e.message)
     }
 }
