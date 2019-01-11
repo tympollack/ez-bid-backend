@@ -26,6 +26,14 @@ exports.BID_ITEM_DETAILS_PARAMS_SOURCE_VAL = this.BID_ITEM_DETAILS_PARAMS.source
 
 /////////////////////////////////////////////////////////////////////
 
+exports.CONFIG_ELASTICSEARCH = config.elasticsearch
+
+exports.ES_USER = this.CONFIG_ELASTICSEARCH.user
+exports.ES_PASS = this.CONFIG_ELASTICSEARCH.pass
+exports.ES_ADDRESS = this.CONFIG_ELASTICSEARCH.address
+
+/////////////////////////////////////////////////////////////////////
+
 exports.CONFIG_FIREBASE = config.firebase
 
 exports.FB_PROJECTID = this.CONFIG_FIREBASE.projectId

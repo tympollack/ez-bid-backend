@@ -270,8 +270,13 @@ async function crawlItems(auctionId, idsToCrawl, opts) {
         addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_STATUS_ADDITIONAL, info[vars.PUP_SEL_ITEM_DETAILS_STATUS_ADDITIONAL.name])
         addToObjectIfNotEmpty(sanInfo, vars.FS_ITEM_TITLE, info[vars.PUP_SEL_ITEM_DETAILS_TITLE.name])
 
-        const location = info[vars.PUP_SEL_ITEM_DETAILS_LOCATION.name].split(',')
-        sanInfo[vars.FS_ITEM_LOCATION] = [location[0].trim(), location[1].trim(), location[2].trim()].join(', ')
+        const location = info[vars.PUP_SEL_ITEM_DETAILS_LOCATION.name]
+        try {
+            const locationParts = location.split(',')
+            sanInfo[vars.FS_ITEM_LOCATION] = [locationParts[0].trim(), locationParts[1].trim(), locationParts[2].trim()].join(', ')
+        } catch (e) {
+            console.error(e, location)
+        }
 
         const desc = info[vars.PUP_SEL_ITEM_DETAILS_DESC.name] || ''
         sanInfo[vars.FS_ITEM_DESC] = desc.replace('... Read More', '').replace('Read Less', '').trim()

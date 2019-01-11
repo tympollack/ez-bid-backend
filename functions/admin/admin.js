@@ -57,7 +57,7 @@ async function otherTest(req, res) {
 async function test(req, res) {
     const elasticsearch = require('elasticsearch')
     const esClient = new elasticsearch.Client({
-        host: 'https://elastic:JtgEtDqU11mTiRio1GQBsZFP@21bb437d36d94fc6be9d79b44deb93e5.us-central1.gcp.cloud.es.io:9243',
+        host: `https://${vars.ES_USER}:${vars.ES_PASS}@${vars.ES_ADDRESS}`
     })
 
     try {

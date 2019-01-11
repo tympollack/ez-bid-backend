@@ -6,6 +6,21 @@ module.exports = {
         env: 'NODE_ENV'
     },
 
+    elasticsearch: {
+        user: {
+            format: String,
+            default: ''
+        },
+        pass: {
+            format: String,
+            default: ''
+        },
+        address: {
+            format: String,
+            default: ''
+        }
+    },
+
     apis: {
         google: {
             maps: {
