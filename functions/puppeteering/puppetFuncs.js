@@ -137,8 +137,8 @@ exports.crawlItems = crawlItems
 
 /////////////////////////////////////////////////////////////////////
 
-function addToObjectIfNotEmpty(obj, field, str = '') {
-    const s = str.trim()
+function addToObjectIfNotEmpty(obj, field, str) {
+    const s = (str || '').trim()
     if (s) obj[field] = s
 }
 
@@ -247,13 +247,14 @@ async function crawlItems(auctionId, idsToCrawl, opts) {
     unsanitaryInfos.forEach(info => {
         const bids = info[vars.PUP_SEL_ITEM_DETAILS_BID_LIST_TABLE.name]
         const sanInfo = {
+            [vars.FS_ITEM_AUCTION_ID]: info[vars.FS_ITEM_AUCTION_ID],
             [vars.FS_ITEM_ID]: info[vars.FS_ITEM_ID],
             [vars.FS_ITEM_BIDS]: bids,
             [vars.FS_ITEM_PRODUCT_IMAGE_LINKS]: info[vars.PUP_SEL_ITEM_DETAILS_PRODUCT_LINK_LIST.name]
         }
 
         const currentBid = info[vars.PUP_SEL_ITEM_DETAILS_CURRENT_BID.name]
-        const currentBidder = (bids.find(bid => bid.bidAmount === currentBid) || {}).bidderId
+        const currentBidder = bids ? (bids.find(bid => bid.bidAmount === currentBid) || {}).bidderId : null
 
         if (currentBid) sanInfo[vars.FS_ITEM_CURRENT_BID] = parseFloat(currentBid)
 

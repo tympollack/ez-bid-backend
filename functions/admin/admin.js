@@ -55,38 +55,40 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
+    const elasticsearch = require('elasticsearch')
+    const esClient = new elasticsearch.Client({
+        host: 'https://elastic:JtgEtDqU11mTiRio1GQBsZFP@21bb437d36d94fc6be9d79b44deb93e5.us-central1.gcp.cloud.es.io:9243',
+    })
+
     try {
         const snap = await db.collection('items').limit(100).get()
-        const promises = []
         const items = []
+        const body = []
         snap.forEach(doc => {
             const item = doc.data()
             items.push(item)
 
-            const params = {
-                method: 'POST',
-                auth: {
-                    username: 'user',
-                    password: 'Q39Ub5yQgkwn'
-                },
-                headers: {
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify({
-                    id: doc.id,
-                    title: item[vars.FS_ITEM_TITLE],
-                    desc: item[vars.FS_ITEM_DESC],
-                    model: item[vars.FS_ITEM_MODEL],
-                    status: item[vars.FS_ITEM_STATUS]
-                })
-            }
+            body.push({
+                create: {
+                    _index: 'items',
+                    _type: 'item',
+                    _id: doc.id
+                }
+            })
 
-            promises.push(utils.newPromise(() => {
-                return fetch('http://35.224.151.143/elasticsearch/item/' + doc.id, params)
-            }))
+            body.push({
+                id: doc.id,
+                title: item[vars.FS_ITEM_TITLE],
+                desc: item[vars.FS_ITEM_DESC],
+                model: item[vars.FS_ITEM_MODEL],
+                status: item[vars.FS_ITEM_STATUS]
+            })
         })
 
-        await Promise.all(promises)
+        esClient.bulk({ body: body }, (err) => {
+            if (err) throw err
+        })
+
         res.json(items)
     } catch (e) {
         console.log(e)

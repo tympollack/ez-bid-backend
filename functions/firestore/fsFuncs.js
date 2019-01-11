@@ -119,6 +119,10 @@ exports.addBids = async bidInfos => {
                 .then(docSnap => {
                     if (!docSnap.exists) batch.set(docRef, info)
                 })
+                .catch(e => {
+                    console.log(info)
+                    throw e
+                })
         }))
     })
     await Promise.all(promises)
