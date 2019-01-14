@@ -69,34 +69,36 @@ exports.findNewAuctions = async () => {
     const auctionInfos = await puppetFuncs.crawlAuctionInfo(auctionNumsToGet, opts)
     const goodInfos = []
     let shouldUpdateBadNums = false
-    auctionInfos.forEach(info => {
-        const num = info[vars.FS_AUCTION_AUCTION_NUMBER]
-        if (info.error) {
-            console.log('Unable to crawl auction at this time.', num || '', info.error)
-            return
-        }
-        const idx = badAuctionNums.indexOf(num)
-        if (!info.name) {
-            console.log('bad auction num', num)
-            if (idx === -1) {
-                badAuctionNums.push(num)
+    if (Array.isArray(auctionInfos)) {
+        auctionInfos.forEach(info => {
+            const num = info[vars.FS_AUCTION_AUCTION_NUMBER]
+            if (info.error) {
+                console.log('Unable to crawl auction at this time.', num || '', info.error)
+                return
+            }
+            const idx = badAuctionNums.indexOf(num)
+            if (!info.name) {
+                console.log('bad auction num', num)
+                if (idx === -1) {
+                    badAuctionNums.push(num)
+                    shouldUpdateBadNums = true
+                }
+                return
+            }
+
+            if (idx > -1) {
+                badAuctionNums.splice(idx, 1)
                 shouldUpdateBadNums = true
             }
-            return
-        }
 
-        if (idx > -1) {
-            badAuctionNums.splice(idx, 1)
-            shouldUpdateBadNums = true
-        }
-
-        info[vars.FS_AUCTION_ADD_DATE] = new Date()
-        info[vars.FS_AUCTION_ITEM_LIST] = []
-        info[vars.FS_AUCTION_ITEMS_CRAWLED] = false
-        info[vars.FS_AUCTION_SANITIZED] = false
-        goodInfos.push(info)
-        console.log('auctionInfo set for', num)
-    })
+            info[vars.FS_AUCTION_ADD_DATE] = new Date()
+            info[vars.FS_AUCTION_ITEM_LIST] = []
+            info[vars.FS_AUCTION_ITEMS_CRAWLED] = false
+            info[vars.FS_AUCTION_SANITIZED] = false
+            goodInfos.push(info)
+            console.log('auctionInfo set for', num)
+        })
+    }
 
     if (shouldUpdateBadNums) fsFuncs.setUnusedAuctionNumbers(badAuctionNums)
     if (goodInfos.length) fsFuncs.addAuctions(goodInfos)

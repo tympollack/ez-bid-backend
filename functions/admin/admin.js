@@ -13,6 +13,7 @@ routes.get('/initBidCollection', initBidCollection)
 routes.get('/changeAllBidAmountsToNumbers', changeAllBidAmountsToNumbers)
 routes.get('/initLocationCollection', initLocationCollection)
 routes.get('/setLastScanDatesOnAllItems', setLastScanDatesOnAllItems)
+routes.get('/setItemsWithoutTitleToRescan', setItemsWithoutTitleToRescan)
 
 // manage firestore
 routes.get('/countFirestoreObjects', countFirestoreObjects)
@@ -60,6 +61,21 @@ async function otherTest(req, res) {
 }
 
 async function test(req, res) {
+    try {
+        const snap = await db.collection('items')
+            .orderBy(vars.FS_ITEM_LAST_SCAN_DATE)
+            .get()
+
+        fsFuncs.
+
+        res.send('' + snap.size)
+    } catch (e) {
+        console.log(e)
+        res.send(e.message)
+    }
+}
+
+async function bulkAddItemsToElasticsearch(req, res) {
     const elasticsearch = require('elasticsearch')
     const esClient = new elasticsearch.Client({
         host: `https://${vars.ES_USER}:${vars.ES_PASS}@${vars.ES_ADDRESS}`
@@ -102,17 +118,6 @@ async function test(req, res) {
 }
 
 async function setLastScanDatesOnAllItems(req, res) {
-    const batchPromise = batchData => {
-        return utils.newPromise(() => {
-            const batch = db.batch()
-            for (let i = 0, len = batchData.length; i < len; i++) {
-                const d = batchData[i]
-                batch.set(d.docRef, d.data)
-            }
-            return batch.commit()
-        })
-    }
-
     const testDocRef = db.collection('test').doc('test')
     const testDoc = await testDocRef.get()
     const previousLastId = testDoc.data().lastId
@@ -140,7 +145,7 @@ async function setLastScanDatesOnAllItems(req, res) {
         })
 
         if (batchData.length === 500 || total === limit || lastId === doc.id) {
-            promises.push(batchPromise(batchData.slice()))
+            promises.push(utils.batchPromise(batchData.slice(), 'update'))
             batchData = []
         }
     })
@@ -150,18 +155,52 @@ async function setLastScanDatesOnAllItems(req, res) {
 }
 
 async function setItemsWithoutTitleToRescan(req, res) {
-    const batchPromise = batchData => {
-        return utils.newPromise(() => {
-            const batch = db.batch()
-            for (let i = 0, len = batchData.length; i < len; i++) {
-                const d = batchData[i]
-                batch.set(d.docRef, d.data)
-            }
-            return batch.commit()
-        })
-    }
-
+    const testDocRef = db.collection('test').doc('test')
+    const testDoc = await testDocRef.get()
+    const previousLastId = testDoc.data().lastId
     const limit = 10000
+    const oneYear = utils.dateFromNow(1, 'years')
+
+    const collRef = db.collection('info')
+        .doc(vars.FS_IT_RESCAN_ITEMS)
+        .collection(vars.FS_IT_RESCAN_ITEMS)
+    const snap = await db.collection('items')
+        .orderBy('id')
+        .startAfter(previousLastId)
+        .limit(limit)
+        .get()
+
+    const promises = []
+    const lastId = snap.docs[snap.size - 1].id
+    let count = 0, total = 0, batchData = []
+    snap.forEach(doc => {
+        const item = doc.data()
+        total++
+        if (!item[vars.FS_ITEM_TITLE]) {
+            count++
+            const itemId = item[vars.FS_ITEM_ID]
+            batchData.push({
+                docRef: collRef.doc(itemId),
+                data: {
+                    [vars.FS_RI_SCAN_BY_DATE]: oneYear,
+                    [vars.FS_RI_ITEM_ID]: itemId,
+                    [vars.FS_RI_AUCTION_ID]: item[vars.FS_ITEM_AUCTION_ID]
+                }
+            })
+        }
+
+        if (batchData.length === 500 || total === limit || lastId === doc.id) {
+            promises.push(utils.batchPromise(batchData.slice()))
+            batchData = []
+        }
+    })
+    await Promise.all(promises)
+    await testDocRef.update({ lastId: lastId })
+    res.send(`${count} items without titles out of ${total}, ${previousLastId} - ${lastId}`)
+}
+
+async function setItemsWithScanDateBeforeEndDateToRescan(req, res) {
+    const limit = 10
     const oneYear = utils.dateFromNow(1, 'years')
     const collRef = db.collection('info')
         .doc(vars.FS_IT_RESCAN_ITEMS)

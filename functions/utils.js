@@ -1,8 +1,10 @@
-const vars = require('./vars')
 const cloudTasks = require('@google-cloud/tasks')
 const crypto = require('crypto')
-const gmc = require('./googleMapsClient')
 const moment = require('moment')
+
+const db = require('./firestore/init')
+const gmc = require('./googleMapsClient')
+const vars = require('./vars')
 
 // @deprecated
 exports.fsGetObjectById = (db, collection, id) => {
@@ -43,6 +45,17 @@ exports.quickHash = data => {
 exports.newPromise = promise => {
     return new Promise((resolve, reject) => {
         promise().then(() => { resolve() }, e => { reject(e) })
+    })
+}
+
+exports.batchPromise = (batchData, method = 'set') => {
+    return this.newPromise(() => {
+        const batch = db.batch()
+        for (let i = 0, len = batchData.length; i < len; i++) {
+            const d = batchData[i]
+            batch[method](d.docRef, d.data)
+        }
+        return batch.commit()
     })
 }
 
