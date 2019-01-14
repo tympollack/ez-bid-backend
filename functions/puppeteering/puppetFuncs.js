@@ -40,7 +40,6 @@ async function updateUserSession(db, page, userId) {
     return session
 }
 
-// opts: userId, bidnum, bidpw, session, forceLogin, skipLogin, db
 exports.puppetAction = puppetAction
 
 exports.crawlAuctionInfo = async (auctionIds, opts) => {
@@ -314,6 +313,7 @@ async function crawlItems(auctionId, idsToCrawl, opts) {
     return sanitaryInfos
 }
 
+// opts: userId, bidnum, bidpw, session, forceLogin, skipLogin, db
 async function puppetAction(opts, next) {
     const ret = {}
     const { userId, bidnum, bidpw, session, forceLogin, skipLogin, db } = opts

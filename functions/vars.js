@@ -26,6 +26,14 @@ exports.BID_ITEM_DETAILS_PARAMS_SOURCE_VAL = this.BID_ITEM_DETAILS_PARAMS.source
 
 /////////////////////////////////////////////////////////////////////
 
+exports.CONFIG_DATASTORE = config.datastore
+
+exports.DS_BUCKETS = this.CONFIG_DATASTORE.buckets
+exports.DS_FSBACKUPS_BUCKET = this.DS_BUCKETS.fsBackups.name
+exports.DS_FSBACKUPS_COLLECTION_IDS = this.DS_BUCKETS.fsBackups.collectionIds
+
+/////////////////////////////////////////////////////////////////////
+
 exports.CONFIG_ELASTICSEARCH = config.elasticsearch
 
 exports.ES_USER = this.CONFIG_ELASTICSEARCH.user
@@ -138,6 +146,7 @@ exports.FS_ITEM_DESC = this.FS_FIELDS_ITEM.desc.name
 exports.FS_ITEM_END_DATE = this.FS_FIELDS_ITEM.endDate.name
 exports.FS_ITEM_ID = this.FS_FIELDS_ITEM.id.name
 exports.FS_ITEM_ITEM_NUMBER = this.FS_FIELDS_ITEM.itemNumber.name
+exports.FS_ITEM_LAST_SCAN_DATE = this.FS_FIELDS_ITEM.lastScanDate.name
 exports.FS_ITEM_LISTED_MSRP = this.FS_FIELDS_ITEM.listedMSRP.name
 exports.FS_ITEM_LOCATION = this.FS_FIELDS_ITEM.location.name
 exports.FS_ITEM_LOCATION_ID = this.FS_FIELDS_ITEM.locationId.name

@@ -12,6 +12,7 @@ routes.get('/resetAuctionsNotYetFullyCrawled', resetAuctionsNotYetFullyCrawled)
 routes.get('/initBidCollection', initBidCollection)
 routes.get('/changeAllBidAmountsToNumbers', changeAllBidAmountsToNumbers)
 routes.get('/initLocationCollection', initLocationCollection)
+routes.get('/setLastScanDatesOnAllItems', setLastScanDatesOnAllItems)
 
 // manage firestore
 routes.get('/countFirestoreObjects', countFirestoreObjects)
@@ -19,6 +20,7 @@ routes.get('/clearStats', clearStats)
 routes.get('/deleteCollections', deleteCollections)
 routes.get('/generateStats', generateStats)
 routes.get('/generateAdminSnapshot', generateAdminSnapshot)
+routes.get('/fsBackup', fsBackup)
 
 routes.get('/geocodeAddress', geocodeAddress)
 
@@ -50,7 +52,10 @@ async function badAuctionNumDedupe(req, res) {
 }
 
 async function otherTest(req, res) {
-    const snap = await db.collection('info').doc('RESCAN_ITEMS').collection('RESCAN_ITEMS').get()
+    // const snap = await db.collection('info').doc('RESCAN_ITEMS').collection('RESCAN_ITEMS').get()
+    const snap = await db.collection('items')
+        .where(vars.FS_ITEM_ADD_DATE)
+        .get()
     res.send(snap.size + '')
 }
 
@@ -96,7 +101,55 @@ async function test(req, res) {
     }
 }
 
-async function saveThis(req, res) {
+async function setLastScanDatesOnAllItems(req, res) {
+    const batchPromise = batchData => {
+        return utils.newPromise(() => {
+            const batch = db.batch()
+            for (let i = 0, len = batchData.length; i < len; i++) {
+                const d = batchData[i]
+                batch.set(d.docRef, d.data)
+            }
+            return batch.commit()
+        })
+    }
+
+    const testDocRef = db.collection('test').doc('test')
+    const testDoc = await testDocRef.get()
+    const previousLastId = testDoc.data().lastId
+    const limit = 10000
+
+    const collRef = db.collection('items')
+    const snap = await collRef
+        .orderBy('id')
+        .startAfter(previousLastId)
+        .limit(limit)
+        .get()
+
+    const promises = []
+    const lastId = snap.docs[snap.size - 1].id
+    let total = 0, batchData = []
+    snap.forEach(doc => {
+        total++
+        const item = doc.data()
+        const itemId = item[vars.FS_ITEM_ID]
+        batchData.push({
+            docRef: collRef.doc(itemId),
+            data: {
+                [vars.FS_ITEM_LAST_SCAN_DATE]: item[vars.FS_ITEM_ADD_DATE],
+            }
+        })
+
+        if (batchData.length === 500 || total === limit || lastId === doc.id) {
+            promises.push(batchPromise(batchData.slice()))
+            batchData = []
+        }
+    })
+    await Promise.all(promises)
+    await testDocRef.update({ lastId: lastId })
+    res.send(`${total} items updated, ${previousLastId} - ${lastId}`)
+}
+
+async function setItemsWithoutTitleToRescan(req, res) {
     const batchPromise = batchData => {
         return utils.newPromise(() => {
             const batch = db.batch()
@@ -278,6 +331,14 @@ async function testFindAuctions(req, res) {
     ret.badNumbers.sort()
 
     res.status(200).json(ret)
+}
+
+/////////////////////////////////////////////////////////////////////
+
+async function fsBackup(req, res) {
+    const { collectionIds } = req.query
+    const r = await psFuncs.firestoreBackup(collectionIds ? JSON.parse(collectionIds) : null)
+    r instanceof Error ? res.send(r.message) : res.json(r)
 }
 
 /////////////////////////////////////////////////////////////////////

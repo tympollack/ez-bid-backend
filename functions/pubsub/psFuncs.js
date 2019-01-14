@@ -1,3 +1,4 @@
+const { auth } = require('google-auth-library')
 const moment = require('moment')
 const db = require('../firestore/init')
 const fsFuncs = require('../firestore/fsFuncs')
@@ -168,6 +169,29 @@ exports.removeOldEvents = () => {
     return fsFuncs.removeOldEvents()
 }
 
+exports.firestoreBackup = async (collectionIds) => {
+    const authClient = await auth.getClient({
+        keyFile: 'service-account-fsbackup.json',
+        scopes: 'https://www.googleapis.com/auth/datastore'
+    })
+    const url = `https://firestore.googleapis.com/v1beta1/projects/${vars.FB_PROJECTID}/databases/(default):exportDocuments`
+    try {
+        const res = await authClient.request({
+            url,
+            method: 'POST',
+            data: {
+                collectionIds: collectionIds,
+                outputUriPrefix: `gs://${vars.DS_FSBACKUPS_BUCKET}`
+            }
+        })
+        console.log('firestore backed up at', new Date())
+        return res.data
+    } catch (e) {
+        console.error(e)
+        return e.message
+    }
+}
+
 exports.rescanItems = async () => {
     console.log('Rescanning items...')
 
@@ -225,7 +249,7 @@ exports.rescanItems = async () => {
             const actionResp = await puppetFuncs.crawlItems(auctionId, rescanInfo[auctionId], opts)
             if (!Array.isArray(actionResp)) throw actionResp
             actionResp.forEach(info => {
-                info[vars.FS_ITEM_ADD_DATE] = new Date()
+                info[vars.FS_ITEM_LAST_SCAN_DATE] = new Date()
                 goodInfos.push(info) // todo figure out validation that would fail an item
             })
         }

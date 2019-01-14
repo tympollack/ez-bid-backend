@@ -128,6 +128,18 @@ module.exports = {
 
     datastore: {
         buckets: {
+            fsBackups: {
+                name: {
+                    format: 'guid',
+                    default: ''
+                },
+
+                collectionIds: {
+                    format: Array,
+                    default: ['auctions', 'bids', 'items', 'info']
+                }
+            },
+
             productPictures: {
                 name: {
                     format: 'guid',
@@ -577,6 +589,18 @@ module.exports = {
                         path: {
                             format: String,
                             default: 'items/{location}'
+                        }
+                    },
+
+                    lastScanDate: {
+                        name: {
+                            doc: 'Late time rescanned.',
+                            format: String,
+                            default: 'lastScanDate'
+                        },
+                        path: {
+                            format: String,
+                            default: 'items/{lastScanDate}'
                         }
                     },
 
@@ -1117,6 +1141,12 @@ module.exports = {
 
         topics: {
             doc: 'Topics added to by cron -> app engine.',
+
+            backupFirestore: {
+                format: String,
+                default: 'backup-firestore'
+            },
+
             findNewAuctions: {
                 format: String,
                 default: 'find-new-auctions'

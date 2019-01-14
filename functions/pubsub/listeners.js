@@ -26,6 +26,14 @@ exports.rescanItems = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(vars.P
     return psFuncs.rescanItems()
 })
 
+exports.backupFirestore = functions.pubsub.topic(vars.PS_TOPICS.backupFirestore).onPublish(() => {
+    console.log('Backing up firestore.')
+    return Promise.all([
+        psFuncs.firestoreBackup(),
+        psFuncs.firestoreBackup(["auctions","bids","items","info"])
+    ])
+})
+
 exports.loginQueue = functions.runWith(vars.PUPPETEER_OPTS).pubsub.topic(vars.PS_TOPICS.loginqueue).onPublish(message => {
     console.log('Processing queue:', vars.PS_TOPICS.loginqueue)
     console.log(message)
