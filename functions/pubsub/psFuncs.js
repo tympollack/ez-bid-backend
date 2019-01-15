@@ -145,7 +145,9 @@ exports.findNewItems = async () => {
             const itemId = info[vars.FS_ITEM_ID]
             itemList.push(itemId)
 
-            info[vars.FS_ITEM_ADD_DATE] = new Date()
+            const now = new Date()
+            info[vars.FS_ITEM_ADD_DATE] = now
+            info[vars.FS_ITEM_LAST_SCAN_DATE] = now
             goodInfos.push(info) // todo figure out validation that would fail an item
         })
 
@@ -233,12 +235,11 @@ exports.rescanItems = async () => {
         const isActiveItem = endDate > new Date()
         if (skipLogin) skipLogin = !isActiveItem
 
-        const docRef = collRef.doc(doc.id)
-        if (isActiveItem && data[vars.FS_RI_SCAN_ON_INTERVAL]) {
-            updateBatch.update(docRef, { [vars.FS_RI_SCAN_BY_DATE]: utils.nextRescan(endDate) })
-        } else {
-            updateBatch.delete(docRef)
-        }
+        // const docRef = collRef.doc(doc.id)
+        // if (isActiveItem && data[vars.FS_RI_SCAN_ON_INTERVAL]) {
+        // if (isActiveItem) updateBatch.update(docRef, { [vars.FS_RI_SCAN_BY_DATE]: utils.nextRescan(endDate) })
+        // else updateBatch.delete(docRef)
+        if (!isActiveItem) updateBatch.delete(collRef.doc(doc.id))
     })
     await updateBatch.commit()
 
@@ -256,7 +257,7 @@ exports.rescanItems = async () => {
             })
         }
 
-        return fsFuncs.addItems(goodInfos)
+        return fsFuncs.updateItems(goodInfos)
     } catch(e) {
         console.log(e)
         throw e

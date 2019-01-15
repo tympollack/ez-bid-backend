@@ -96,13 +96,12 @@ exports.addAuctions = async auctionInfos => {
 
 exports.addItems = async itemInfos => {
     if (!itemInfos.length) return Promise.reject('No items to add.')
-    const collRef = db.collection(vars.FS_COLLECTIONS_ITEMS.name)
-    const batch = db.batch()
-    itemInfos.forEach(info => {
-        const docRef = collRef.doc(info[vars.FS_ITEM_ID] + '')
-        batch.set(docRef, info)
-    })
-    return await batch.commit()
+    return batchItemData(itemInfos)
+}
+
+exports.updateItems = async itemInfos => {
+    if (!itemInfos.length) return Promise.reject('No items to add.')
+    return batchItemData(itemInfos, 'update')
 }
 
 exports.addBids = async bidInfos => {
@@ -466,4 +465,31 @@ exports.getMaxNumberOfBids = async () => {
         if (len > maxBidSize) maxBidSize = len
     })
     return maxBidSize
+}
+
+/////////////////////////////////////////////////////////////////////
+
+async function batchItemData(itemInfos, method = 'set') {
+    const itemsCollRef = db.collection(vars.FS_COLLECTIONS_ITEMS.name)
+    const rescanCollRef = db.collection(vars.FS_COLLECTIONS_INFO.name)
+        .doc(vars.FS_IT_RESCAN_ITEMS)
+        .collection(vars.FS_IT_RESCAN_ITEMS)
+
+    const batch = db.batch()
+    itemInfos.forEach(info => {
+        const itemId = info[vars.FS_ITEM_ID] + ''
+        batch[method](itemsCollRef.doc(itemId), info)
+
+        // const scanDate = info[vars.FS_ITEM_LAST_SCAN_DATE] || info[vars.FS_ITEM_ADD_DATE]
+        // const endDate = info[vars.FS_ITEM_END_DATE]
+        // if (scanDate._seconds < endDate._seconds) {
+        //     batch.set(rescanCollRef.doc(itemId), {
+        //             [vars.FS_RI_SCAN_BY_DATE]: utils.nextRescan(endDate),
+        //             [vars.FS_RI_ITEM_ID]: itemId,
+        //             [vars.FS_RI_AUCTION_ID]: info[vars.FS_ITEM_AUCTION_ID]
+        //         }
+        //     )
+        // }
+    })
+    return batch.commit()
 }

@@ -111,7 +111,9 @@ async function routeCrawlAuctionItem(req, res) {
 
     const goodInfos = []
     actionResp.forEach(info => {
-        info[vars.FS_ITEM_ADD_DATE] = new Date()
+        const now = new Date()
+        info[vars.FS_ITEM_ADD_DATE] = now
+        info[vars.FS_ITEM_LAST_SCAN_DATE] = now
         goodInfos.push(info) // todo figure out validation that would fail an item
     })
 

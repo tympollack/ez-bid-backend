@@ -62,13 +62,48 @@ async function otherTest(req, res) {
 
 async function test(req, res) {
     try {
+        const testDocRef = db.collection('test').doc('test')
+        const previousLastId = (await testDocRef.get()).data().lastId
+        const limit = 1000
+        const collRef = db.collection('info')
+            .doc(vars.FS_IT_RESCAN_ITEMS)
+            .collection(vars.FS_IT_RESCAN_ITEMS)
+
         const snap = await db.collection('items')
             .orderBy(vars.FS_ITEM_LAST_SCAN_DATE)
+            // .startAfter(previousLastId)
+            .limit(limit)
             .get()
 
-        fsFuncs.
+        const promises = []
+        const lastId = (snap.docs[snap.size - 1] || {}).id
+        let count = 0, total = 0, batchData = []
+        snap.forEach(doc => {
+            total++
+            const item = doc.data()
+            const scanDate = item[vars.FS_ITEM_LAST_SCAN_DATE]
+            const endDate = item[vars.FS_ITEM_END_DATE]
+            if (scanDate._seconds < endDate._seconds) {
+                count++
+                const itemId = item[vars.FS_ITEM_ID]
+                batchData.push({
+                    docRef: collRef.doc(itemId),
+                    data: {
+                        [vars.FS_RI_SCAN_BY_DATE]: utils.nextRescan(endDate),
+                        [vars.FS_RI_ITEM_ID]: itemId,
+                        [vars.FS_RI_AUCTION_ID]: item[vars.FS_ITEM_AUCTION_ID]
+                    }
+                })
+            }
 
-        res.send('' + snap.size)
+            if (batchData.length === 500 || total === limit || lastId === doc.id) {
+                promises.push(utils.batchPromise(batchData.slice()))
+                batchData = []
+            }
+        })
+        await Promise.all(promises)
+        await testDocRef.update({ lastId: lastId })
+        res.send(`${count} items need rescanned out of ${total}, ${previousLastId} - ${lastId}`)
     } catch (e) {
         console.log(e)
         res.send(e.message)
@@ -156,14 +191,13 @@ async function setLastScanDatesOnAllItems(req, res) {
 
 async function setItemsWithoutTitleToRescan(req, res) {
     const testDocRef = db.collection('test').doc('test')
-    const testDoc = await testDocRef.get()
-    const previousLastId = testDoc.data().lastId
+    const previousLastId = (await testDocRef.get()).data().lastId
     const limit = 10000
     const oneYear = utils.dateFromNow(1, 'years')
-
     const collRef = db.collection('info')
         .doc(vars.FS_IT_RESCAN_ITEMS)
         .collection(vars.FS_IT_RESCAN_ITEMS)
+
     const snap = await db.collection('items')
         .orderBy('id')
         .startAfter(previousLastId)
