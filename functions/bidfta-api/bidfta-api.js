@@ -177,13 +177,11 @@ function callBidApi(req, res, url, body = {}) {
             credentials: 'same-origin',
             headers: {
                 'Accept': '*/*',
-                // 'Accept': 'application/json',
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                // 'Content-Type': 'application/json',
+                'Content-Type': typeof body === 'object' ? 'application/json' : 'application/x-www-form-urlencoded; charset=UTF-8',
                 'cookie': cookie,
                 'x-csrf-token': csrf
             },
-            "referrer":"https://www.bidfta.com/itemDetails?idauctions=7736&idItems=716905&firstIdItem=716905&source=auctionItems&lastIdItem=717004",
+            referrer: 'https://www.bidfta.com/',
             redirect: 'follow',
             body: JSON.stringify(body)
         }
@@ -198,6 +196,6 @@ function callBidApi(req, res, url, body = {}) {
                         response.text().then(r => { res.send(r) })
                     })
             })
-            .catch(e => { res.status(400).json(e) })
+            .catch(e => { res.status(500).json(e) })
     })
 }

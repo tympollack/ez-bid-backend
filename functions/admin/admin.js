@@ -54,10 +54,49 @@ async function badAuctionNumDedupe(req, res) {
 
 async function otherTest(req, res) {
     // const snap = await db.collection('info').doc('RESCAN_ITEMS').collection('RESCAN_ITEMS').get()
-    const snap = await db.collection('items')
-        .where(vars.FS_ITEM_ADD_DATE)
-        .get()
-    res.send(snap.size + '')
+    // const snap = await db.collection('items')
+    //     .where(vars.FS_ITEM_ADD_DATE)
+    //     .get()
+    // res.send(snap.size + '')
+
+    let opts = await fsFuncs.getFsUserSession(vars.FS_SERVICE_ACCOUNT_ID)
+    if (!opts) {
+        return new Error('failed getting user session')
+    }
+    opts.db = db
+
+    const params = {
+        method: 'POST',
+        mode: 'no-cors',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            // 'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'cookie': opts.session.cookie,
+            'x-csrf-token': opts.session.csrf
+        },
+        redirect: 'follow',
+        // body: JSON.stringify({idBidders: "5195", idItems: [859554], idauctions: "8843"})
+        body: 'idItems=859554'
+    }
+    // const url = 'https://www.bidfta.com/itemDetails?idauctions=8843&idItems=859554&source=auctionItems'
+    // const url = 'https://www.bidfta.com/bidfta/getUpdateItems'
+    const url = 'https://www.bidfta.com/getBidHistoryListItem'
+    fetch(url, params).then(response => response.text())
+        .then(d => {
+            // const auctionList = d.content
+            // const len = auctionList.length
+            // if (!len) return false
+
+            res.send(d)
+            // console.log('getAuctionList processing page', i)
+        })
+        .catch(error => {
+            console.log('error:', error)
+            res.send(error.message)
+        })
 }
 
 async function test(req, res) {
