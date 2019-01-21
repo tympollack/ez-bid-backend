@@ -72,18 +72,18 @@ async function otherTest(req, res) {
         credentials: 'same-origin',
         headers: {
             'Accept': 'application/json',
-            // 'Content-Type': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Content-Type': 'application/json',
+            // 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'cookie': opts.session.cookie,
             'x-csrf-token': opts.session.csrf
         },
         redirect: 'follow',
-        // body: JSON.stringify({idBidders: "5195", idItems: [859554], idauctions: "8843"})
-        body: 'idItems=859554'
+        body: JSON.stringify({idBidders: "5195", idItems: [1006466], idauctions: "9918"})
+        // body: 'idItems=859554'
     }
     // const url = 'https://www.bidfta.com/itemDetails?idauctions=8843&idItems=859554&source=auctionItems'
-    // const url = 'https://www.bidfta.com/bidfta/getUpdateItems'
-    const url = 'https://www.bidfta.com/getBidHistoryListItem'
+    const url = 'https://www.bidfta.com/bidfta/getUpdateItems'
+    // const url = 'https://www.bidfta.com/getBidHistoryListItem'
     fetch(url, params).then(response => response.text())
         .then(d => {
             // const auctionList = d.content
